@@ -1,0 +1,43 @@
+name: "🔧 기타 작업"
+description: "리팩토링, 문서 수정, 테스트 등 기타 작업에 사용합니다."
+title: "[Chore], [Refactor], [Test] "
+labels: ["chore"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📌 작업 내용  
+        작업 목적과 내용을 간단히 설명해주세요.
+  - type: textarea
+    id: task-description
+    attributes:
+      label: 작업 내용
+      placeholder: 예) README.md 업데이트 및 코드 정리
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✅ 체크리스트  
+        어떤 종류의 작업이 포함됐는지 체크해주세요.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 체크리스트
+      options:
+        - label: 문서 작업
+        - label: 테스트 코드 작성
+        - label: 설정 파일 변경
+        - label: 기타 정리
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 🔗 참고 자료 (선택)
+      description: 참고한 자료가 있다면 입력해주세요.
+      placeholder: 예) https://example.com
+    validations:
+      required: false
