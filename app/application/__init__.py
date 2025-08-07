@@ -1,9 +1,5 @@
-"""
-애플리케이션 모듈
-비즈니스 로직과 포트를 정의합니다.
-"""
-from . import ports
 
-__all__ = [
-    "ports"
-]
+from .ports.input.ai_port import AIInputPort
+from .ports.output.ai_port import AIOutputPort
+
+__all__ = ["AIInputPort", "AIOutputPort"]
