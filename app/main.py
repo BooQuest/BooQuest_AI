@@ -1,17 +1,21 @@
-"""
-메인 애플리케이션
-FastAPI 기반 웹 서버를 실행합니다.
-"""
+import atexit
+import signal
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from app.adapters.input.http.ai_http_adapter import AIHttpAdapter
+from app.adapters.input.http.router import router
 from app.infrastructure.logging import get_logger
+from app.infrastructure.config import stop_settings_watcher
+from app.infrastructure.dependency_injection import setup_dependencies
+
+# 의존성 주입 설정 초기화
+setup_dependencies()
 
 # FastAPI 앱 생성
 app = FastAPI(
-    title="AI Chat API",
-    description="AI와의 대화를 위한 API",
+    title="AI  API",
+    description="부업을 통한 수입화 도우미",
     version="1.0.0"
 )
 
@@ -19,23 +23,31 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=False,  # credentials를 False로 변경
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 logger = get_logger("main")
 
-# HTTP 어댑터 초기화
-ai_http_adapter = AIHttpAdapter()
-
 # 라우터 등록
-app.include_router(ai_http_adapter.router)
+app.include_router(router)
 
 @app.get("/health")
 async def health_check():
-    """헬스 체크 엔드포인트"""
     return {"status": "healthy"}
+
+def cleanup():
+    stop_settings_watcher()
+
+def signal_handler(signum, frame):
+    cleanup()
+    sys.exit(0)
+
+atexit.register(cleanup) # 종료 시 정리 작업 등록
+signal.signal(signal.SIGINT, signal_handler)  # Ctrl+C
+signal.signal(signal.SIGTERM, signal_handler) # 터미널 종료
 
 if __name__ == "__main__":
     uvicorn.run(
