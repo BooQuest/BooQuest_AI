@@ -1,5 +1,4 @@
 from typing import Type, TypeVar, Dict, Callable
-from fastapi import Depends
 
 T = TypeVar('T')
 
@@ -11,11 +10,6 @@ def get_ai_task_assistant():
     from app.application.usecases.ai_assistant_usecase import AIAssistantUseCase
     ai_task_generator = get_ai_task_generator()
     return AIAssistantUseCase(ai_task_generator)
-
-def get_ai_adapter():
-    from app.adapters.input.ai_adapter import AIAdapter
-    ai_input_port = get_ai_task_assistant()
-    return AIAdapter(ai_input_port)
 
 _dependency_factories: Dict[Type, Callable] = {}
 

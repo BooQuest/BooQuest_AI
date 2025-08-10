@@ -1,4 +1,3 @@
-from .ai_adapter import AIAdapter
-from .http import router
+from . import router
 
-__all__ = ["AIAdapter", "router"] 
+__all__ = ["router"] 

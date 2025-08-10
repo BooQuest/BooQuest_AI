@@ -1,8 +1,5 @@
-"""
-AI 모델 관련 도메인 객체들을 정의합니다.
-"""
-from enum import Enum
-from typing import Dict, Any, Optional, List
+
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
