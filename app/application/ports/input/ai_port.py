@@ -1,24 +1,8 @@
-"""
-AI 입력 포트
-AI와의 상호작용을 위한 인터페이스입니다.
-"""
 from abc import ABC, abstractmethod
 from typing import Dict, Any
-from app.domain.entities.ai_model import AIModelConfig
 
 class AIInputPort(ABC):
-    """AI 입력 포트 인터페이스"""
-    
     @abstractmethod
-    async def ask_question(self, question: str, model_config: AIModelConfig) -> Dict[str, Any]:
-        """
-        AI에게 질문을 합니다.
-        
-        Args:
-            question: 질문 내용
-            model_config: AI 모델 설정
-            
-        Returns:
-            AI 응답
-        """
+    async def generate_big_tasks(self, user_profile_request) -> Dict[str, Any]:
+        """사용자 프로필 요청을 받아서 큰 임무들을 생성합니다."""
         pass 
