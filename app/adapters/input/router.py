@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.adapters.input.dto.big_task_response import BigTaskResponse
 from app.infrastructure.logging import get_logger
 from app.infrastructure.dependency_injection import resolve
-from app.application.ports.input.ai_port import AIInputPort
+from app.application.ports.input.ai_input_port import AIInputPort
 from .dto.user_profile_dto import UserProfileRequest
 
 router = APIRouter(prefix="/ai", tags=["AI"])

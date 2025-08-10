@@ -23,8 +23,8 @@ def resolve(dependency_type: Type[T]) -> T:
     return _dependency_factories[dependency_type]()
 
 def setup_dependencies():
-    from app.application.ports.output.ai_port import AIOutputPort
-    from app.application.ports.input.ai_port import AIInputPort
+    from app.application.ports.output.ai_output_port import AIOutputPort
+    from app.application.ports.input.ai_input_port import AIInputPort
     from app.application.usecases.ai_assistant_usecase import AIAssistantUseCase
     
     register_dependency(AIOutputPort, get_ai_task_generator)

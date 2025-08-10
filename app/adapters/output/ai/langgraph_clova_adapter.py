@@ -1,6 +1,6 @@
 import json
 from typing import Dict, Any, List, TypedDict
-from app.application.ports.output.ai_port import AIOutputPort
+from app.application.ports.output.ai_output_port import AIOutputPort
 from app.domain.entities.user_profile import UserProfile
 from app.infrastructure.logging import get_logger
 from app.infrastructure.config import get_settings

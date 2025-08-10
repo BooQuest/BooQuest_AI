@@ -4,7 +4,7 @@ import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from app.adapters.input.http.router import router
+from app.adapters.input.router import router
 from app.infrastructure.logging import get_logger
 from app.infrastructure.config import stop_settings_watcher
 from app.infrastructure.dependency_injection import setup_dependencies

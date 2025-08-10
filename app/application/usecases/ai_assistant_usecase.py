@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from app.application.ports.input.ai_port import AIInputPort
+from app.application.ports.input.ai_input_port import AIInputPort
 from app.application.ports.output.ai_output_port import AIOutputPort
 from app.domain.entities.user_profile import UserProfile
 from app.infrastructure.logging import get_logger
