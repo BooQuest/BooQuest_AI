@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, AsyncGenerator
+from typing import Dict, Any
 
 class AIInputPort(ABC):
     @abstractmethod
