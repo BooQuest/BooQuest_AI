@@ -13,7 +13,7 @@ env:
   IMAGE_NAME: booquest-dev-ai
   CONTAINER_NAME: booquest-ai
   APP_PORT: "8081"
-  DEPLOY_TAG: dev
+  DEPLOY_TAG: latest
   START_CMD: "uvicorn app.main:app --host 0.0.0.0 --port 8081"
 
 jobs:
