@@ -1,0 +1,80 @@
+name: CI/CD (dev)
+
+on:
+  push:
+    branches: ["develop"]
+  workflow_dispatch:
+
+concurrency:
+  group: cicd-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: booquest-dev-ai
+  CONTAINER_NAME: booquest-ai
+  APP_PORT: "8081"
+  DEPLOY_TAG: dev
+  START_CMD: "uvicorn app.main:app --host 0.0.0.0 --port 8081"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker build
+        run: |
+          docker build \
+            -t "${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}" \
+            -t "${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${GITHUB_SHA::7}" \
+            .
+
+      - name: Login to NCP registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "${{ secrets.REGISTRY_URL }}" \
+            -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Push images
+        run: |
+          docker push "${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${GITHUB_SHA::7}"
+          docker push "${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}"
+
+      - name: Logout
+        if: always()
+        run: docker logout "${{ secrets.REGISTRY_URL }}" || true
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy on VM via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            REG="${{ secrets.REGISTRY_URL }}"
+            IMG="$REG/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}"
+            CONTAINER="${{ env.CONTAINER_NAME }}"
+            APP_PORT="${{ env.APP_PORT }}"
+            START_CMD='${{ env.START_CMD }}'
+
+            echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "$REG" \
+              -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+            docker pull "$IMG"
+            docker network create booquest-net 2>/dev/null || true
+            docker rm -f "$CONTAINER" 2>/dev/null || true
+
+            docker run -d \
+              --name "$CONTAINER" \
+              --restart unless-stopped \
+              --network booquest-net \
+              --network-alias booquest-ai \
+              -e START_CMD="$START_CMD" \
+              -e APP_PORT="$APP_PORT" \
+              "$IMG"
+
+            docker image prune -f
