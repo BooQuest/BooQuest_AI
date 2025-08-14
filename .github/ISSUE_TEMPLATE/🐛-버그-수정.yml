@@ -1,0 +1,62 @@
+name: "🐛 버그 수정"
+description: "발생한 문제나 에러를 제보합니다."
+title: "[Bug] "
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ❗️ 버그 설명  
+        어떤 문제가 발생했는지 설명해주세요.
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 버그 설명
+      placeholder: 예) 로그인 버튼을 눌러도 반응이 없습니다.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ✅ 재현 방법  
+        아래 순서대로 재현 과정을 설명해주세요.
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 재현 방법
+      placeholder: |
+        1. 로그인 페이지에 접속  
+        2. 로그인 버튼 클릭  
+        3. 아무 반응 없음  
+        4. 원래는 홈 화면으로 이동해야 함
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 환경 정보 (선택)  
+        문제가 발생한 브라우저, 운영체제, 기기 종류 등을 입력해주세요.
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경 정보
+      placeholder: 예) Chrome 116 / macOS Sonoma / iPhone 14
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔗 참고 자료 (선택)  
+        에러 로그, 스크린샷, 링크 등이 있다면 입력해주세요.
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고 자료
+      placeholder: 예) https://github.com/example/project/issues/1
+    validations:
+      required: false
