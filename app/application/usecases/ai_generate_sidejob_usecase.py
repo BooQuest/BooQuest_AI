@@ -15,7 +15,8 @@ class AIGenerateSideJobUseCase(AISideJobInputPort):
         onboarding_profile_request = OnboardingProfile(
             personality=onboarding_profile_request.personality,
             job=onboarding_profile_request.job,
-            hobbies=onboarding_profile_request.hobbies
+            hobbies=onboarding_profile_request.hobbies,
+            desiredSideJob=onboarding_profile_request.desiredSideJob
         )
         
         # 공통 프롬프트 템플릿 사용

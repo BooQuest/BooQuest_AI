@@ -84,7 +84,6 @@ class LangGraphClovaAdapter(AIOutputPort, AISideJobOutputPort):
                 response,
                 is_streaming=model_config.streaming
             )
-            print(response)
 
             try:
                 parsed_data = json.loads(response_content)

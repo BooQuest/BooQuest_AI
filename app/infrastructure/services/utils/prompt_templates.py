@@ -33,34 +33,47 @@ class PromptTemplates:
     @staticmethod
     def generate_recommendation_sidejob_prompt(user_profile: OnboardingProfile) -> str:
         user_profile_dict = user_profile.to_dict()
+        desired = user_profile_dict.get("desiredSideJob", "")
+        desired = desired.strip()
 
-        return f"""
-            부업 3개 목록을 다음과 같이 JSON 형태로 반환해주세요: 설명이나 서론 없이 아래 형식 그대로 JSON 객체만 반환하세요. 
+        if desired:
+            additional_guide = f"""
+            또한 사용자가 선호하는 부업 아이디어로 "{desired}"를 입력했으니,
+            해당 부업을 할 수 있는 SNS 기반 부업 아이디어를 추천해주세요.
+            직업, 성격, 취미와 무관하거나 비현실적인 경우에는 무시하고 나머지 데이터를 기반으로 추천해도 됩니다.
+            """
+        else:
+            additional_guide = ""
 
-            아래 사용자 정보를 기반으로 적합한 SNS 부업 아이디어를 3가지 추천해 주세요.
-            - 인스타그램, 블로그, 유튜브, 틱톡처럼 SNS 기반의 수익형 아이디어만 허용합니다.
-            - 부업 주제는 사용자의 직업, 성격, 취미와 연관되어야 합니다.
-            - 반드시 JSON 형식으로만 응답하세요.
+        prompt = f"""
+        부업 3개 목록을 다음과 같이 JSON 형태로 반환해주세요: 설명이나 서론 없이 아래 형식 그대로 JSON 객체만 반환하세요.
 
-            사용자 정보:
-            {json.dumps(user_profile_dict, ensure_ascii=False, indent=2)}
+        아래 사용자 정보를 기반으로 적합한 SNS 부업 아이디어를 3가지 추천해 주세요.
+        - 인스타그램, 블로그, 유튜브, 틱톡처럼 SNS 기반의 수익형 아이디어만 허용합니다.
+        - 부업 주제는 사용자의 직업, 성격, 취미와 연관되어야 합니다.
+        - 반드시 JSON 형식으로만 응답하세요.
+        {additional_guide}
 
-            반드시 아래와 같은 형식으로만 응답하세요:
+        사용자 정보:
+        {json.dumps(user_profile_dict, ensure_ascii=False, indent=2)}
 
+        반드시 아래와 같은 형식으로만 응답하세요:
+
+        {{
+        "recommendations": [
             {{
-            "recommendations": [
-                {{
-                "title": "부업 아이디어 제목",
-                "description": "추천 이유와 부업에 대한 설명",
-                }},
-                {{
-                "title": "부업 아이디어 제목",
-                "description": "추천 이유와 부업에 대한 설명",
-                }},
-                {{
-                "title": "부업 아이디어 제목",
-                "description": "추천 이유와 부업에 대한 설명",
-                }}
-            ]
+            "title": "부업 아이디어 제목",
+            "description": "추천 이유와 부업에 대한 설명"
+            }},
+            {{
+            "title": "부업 아이디어 제목",
+            "description": "추천 이유와 부업에 대한 설명"
+            }},
+            {{
+            "title": "부업 아이디어 제목",
+            "description": "추천 이유와 부업에 대한 설명"
             }}
-    """
+        ]
+        }}
+        """
+        return prompt.strip()

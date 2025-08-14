@@ -6,10 +6,13 @@ class OnboardingProfile(BaseModel):
     personality: str
     job: str
     hobbies: List[str]
+    desiredSideJob: str = ""
     
     def to_dict(self) -> dict:
         return {
             "personality": self.personality,
             "job": self.job,
             "hobbies": self.hobbies,
+            "desiredSideJob": self.desiredSideJob
         } 
+    
