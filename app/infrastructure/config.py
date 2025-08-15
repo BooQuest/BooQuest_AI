@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     port: int
     
     class Config:
-        env_file = ".env"
+        env_file = "config/.env"
         env_file_encoding = "utf-8"
         extra = "ignore"
 
@@ -37,7 +37,7 @@ class HotReloadSettings:
         self._settings: Optional[Settings] = None
         self._lock = threading.RLock()  # 재진입 가능한 락
         self._last_modified = 0
-        self._env_file_path = Path(".env")
+        self._env_file_path = Path("config/.env")
         self._logger = logging.getLogger("HotReloadSettings")
         self._watcher_thread = None
         self._stop_watcher = threading.Event()
