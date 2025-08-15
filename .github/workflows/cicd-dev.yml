@@ -60,7 +60,7 @@ jobs:
             CONTAINER="${{ env.CONTAINER_NAME }}"
             APP_PORT="${{ env.APP_PORT }}"
             START_CMD='${{ env.START_CMD }}'
-            ENV_PATH="/opt/booquest-ai/config/.env"
+            CONFIG_PATH="/opt/booquest-ai/config"
 
             echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "$REG" \
               -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
@@ -74,7 +74,7 @@ jobs:
               --restart unless-stopped \
               --network booquest-net \
               --network-alias booquest-ai \
-              -v "$ENV_PATH":/app/.env:ro \
+              -v "$CONFIG_PATH":/app/config:ro \
               -e START_CMD="$START_CMD" \
               -e APP_PORT="$APP_PORT" \
               "$IMG"
