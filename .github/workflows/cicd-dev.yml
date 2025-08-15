@@ -73,6 +73,7 @@ jobs:
               --restart unless-stopped \
               --network booquest-net \
               --network-alias booquest-ai \
+              --env-file /opt/booquest-ai/config/.env \
               -e START_CMD="$START_CMD" \
               -e APP_PORT="$APP_PORT" \
               "$IMG"
