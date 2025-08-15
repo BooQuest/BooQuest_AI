@@ -1,6 +1,7 @@
-from app.domain.entities.user_profile import UserProfile
+from app.domain.entities.onboarding_profile import OnboardingProfile
 from app.domain.entities.ai_model import AIModelConfig
 from app.infrastructure.config import get_settings
+
 
 class AIConfigFactory:
     def __init__(self):
@@ -18,7 +19,7 @@ class AIConfigFactory:
             streaming=self.settings.default_streaming
         )
     
-    def determine_user_type(self, user_profile: UserProfile) -> str:
+    def determine_user_type(self, user_profile: OnboardingProfile) -> str:
         personality = user_profile.personality.lower()
         
         # MBTI 으로 분류하는게 더 좋아보인다.
@@ -45,7 +46,7 @@ class AIConfigFactory:
         
         return config
     
-    def create_ai_config(self, user_profile: UserProfile, provider: str, model: str) -> AIModelConfig:
+    def create_ai_config(self, user_profile: OnboardingProfile, provider: str, model: str) -> AIModelConfig:
         # 기본 설정 생성
         base_config = self.create_base_config(provider, model)
         
