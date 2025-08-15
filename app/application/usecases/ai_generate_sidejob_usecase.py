@@ -16,6 +16,8 @@ class AIGenerateSideJobUseCase(AISideJobInputPort):
             personality=onboarding_profile_request.personality,
             job=onboarding_profile_request.job,
             hobbies=onboarding_profile_request.hobbies,
+            expressionStyle=onboarding_profile_request.expressionStyle,
+            strengthType=onboarding_profile_request.strengthType,
             desiredSideJob=onboarding_profile_request.desiredSideJob
         )
         

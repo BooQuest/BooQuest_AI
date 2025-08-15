@@ -5,4 +5,6 @@ class OnboardingProfileRequest(BaseModel):
     personality: str = "creative"
     job: str
     hobbies: List[str]
+    expressionStyle:  str
+    strengthType: str
     desiredSideJob: str
