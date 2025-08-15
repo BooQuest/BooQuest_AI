@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from app.adapters.input.router import router
+from app.infrastructure.config import get_settings
 from app.infrastructure.logging import get_logger
 from app.infrastructure.config import stop_settings_watcher
 from app.infrastructure.dependency_injection import setup_dependencies
@@ -37,6 +38,12 @@ app.include_router(router)
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/show-config")
+def show_config():
+    settings = get_settings()
+    return settings.model_dump()
+
 
 def cleanup():
     stop_settings_watcher()
