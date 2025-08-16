@@ -1,4 +1,5 @@
 import json
+from app.adapters.input.dto.generate_mission_request import GenerateMissionRequest
 from app.domain.entities.onboarding_profile import OnboardingProfile
 
 class PromptTemplates:
@@ -53,5 +54,40 @@ class PromptTemplates:
             }}
         ]
         }}
+        """
+        return prompt.strip()
+
+
+
+    @staticmethod
+    def generate_recommendation_mission_prompt(requestDto: GenerateMissionRequest) -> str:
+        """미션 생성을 위한 프롬프트 생성"""
+        prompt = f"""
+사이드잡을 위한 미션을 생성해주세요.
+
+사이드잡 정보:
+- 제목: {requestDto.side_job_title}
+- 디자인 노트: {requestDto.side_job_design_notes}
+
+다음 형식으로 JSON 응답을 제공해주세요:
+```json
+{{
+    "result": [
+        {{
+            "title": "미션 제목",
+            "order_no": 1,
+            "notes": "미션에 대한 상세 설명"
+        }},
+        {{
+            "title": "미션 제목",
+            "order_no": 2,
+            "notes": "미션에 대한 상세 설명"
+        }}
+    ]
+}}
+```
+
+미션은 5개 입니다 
+생성하고, 각 미션은 구체적이고 실행 가능한 단계여야 합니다.
         """
         return prompt.strip()
