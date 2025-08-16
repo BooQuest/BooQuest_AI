@@ -1,6 +1,5 @@
-import json
-from typing import Any, Optional, Dict, List, TypeVar, Type
-from pydantic import BaseModel, ValidationError
+from typing import Any, Optional, TypeVar
+from pydantic import BaseModel
 from app.infrastructure.logging import get_logger
 
 T = TypeVar('T', bound=BaseModel)
@@ -53,4 +52,3 @@ class AIResponseReader:
             return match.group(1)
         
         return content
-        
