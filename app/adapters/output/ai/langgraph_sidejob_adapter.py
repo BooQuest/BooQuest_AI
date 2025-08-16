@@ -3,7 +3,6 @@ from typing import Dict, Any, List, TypedDict, Optional
 from app.application.ports.output.ai_sidejob_output_port import AISideJobOutputPort
 from app.infrastructure.logging import get_logger
 from app.infrastructure.config import get_settings
-from app.infrastructure.services.utils.prompt_templates import PromptTemplates
 from app.infrastructure.services.utils.ai_config_factory import AIConfigFactory
 from langgraph.graph import StateGraph, END
 
@@ -18,9 +17,9 @@ class SideJobTaskState(TypedDict):
     task_ideas: List[Dict[str, Any]]
     prompt: Optional[str] = None
 
-class LangGraphClovaAdapter(AISideJobOutputPort):
+class LangGraphSideJobAdapter(AISideJobOutputPort):
     def __init__(self):
-        self.logger = get_logger("LangGraphClovaAdapter")
+        self.logger = get_logger("LangGraphSideJobAdapter")
         self.settings = get_settings()
         self.ai_config_factory = AIConfigFactory()
         self.response_reader = AIResponseReader()
@@ -32,7 +31,7 @@ class LangGraphClovaAdapter(AISideJobOutputPort):
         workflow.set_entry_point("generate_tasks")
         workflow.add_edge("generate_tasks", END)
         return workflow.compile()    
-    
+        
     async def _generate_task_ideas_for_sidejob(self, state: SideJobTaskState) -> SideJobTaskState:
         try:
             import openai
@@ -40,16 +39,13 @@ class LangGraphClovaAdapter(AISideJobOutputPort):
                 api_key=self.settings.clova_x_api_key,
                 base_url=self.settings.clova_x_base_url
             )
-
-            user_profile = state['user_profile']
-
             # base config 사용 (성향 보정 없이)
             model_config = self.ai_config_factory.create_ai_config(
-                user_profile,
                 self.settings.clova_x_provider,
                 self.settings.clova_x_model
             )
 
+            # API 호출 파라미터 준비
             api_params = {
                 "model": model_config.model,
                 "messages": [state["messages"]],

@@ -19,37 +19,26 @@ class AIConfigFactory:
             streaming=self.settings.default_streaming
         )
     
-    def determine_user_type(self, user_profile: OnboardingProfile) -> str:
-        personality = user_profile.personality.lower()
-        
-        # MBTI 으로 분류하는게 더 좋아보인다.
-        # personality 를 mbti 로 바꿀까..
-        if any(word in personality for word in []):
-            return "creative"
-        elif any(word in personality for word in []):
-            return "analytical"
-        else:
-            return "practical"
     
-    def adjust_config_for_user_type(self, config: AIModelConfig, user_type: str) -> AIModelConfig:
-        if user_type == "creative":
-            config.temperature = 0.9
-            config.frequency_penalty = 0.5
-            config.max_tokens = 2500
-        elif user_type == "analytical":
-            config.temperature = 0.3
-            config.presence_penalty = 0.2
-            config.max_tokens = 1500
-        elif user_type == "practical":
-            config.temperature = 0.5
-            config.max_tokens = 1800
+    def adjust_config_for_user_type(self, config: AIModelConfig) -> AIModelConfig:
+        # 고도화 필요 들어온 정보로 약간의 튜닝, 밖에서 콜백을 받아야할 듯
+
+        # if user_type == "creative":
+        #     config.temperature = 0.9
+        #     config.frequency_penalty = 0.5
+        #     config.max_tokens = 2500
+        # elif user_type == "analytical":
+        #     config.temperature = 0.3
+        #     config.presence_penalty = 0.2
+        #     config.max_tokens = 1500
+        # elif user_type == "practical":
+        #     config.temperature = 0.5
+        #     config.max_tokens = 1800
         
         return config
     
-    def create_ai_config(self, user_profile: OnboardingProfile, provider: str, model: str) -> AIModelConfig:
+    def create_ai_config(self, provider: str, model: str) -> AIModelConfig:
         # 기본 설정 생성
         base_config = self.create_base_config(provider, model)
         
-        # 사용자 성향에 따른 설정 튜닝
-        user_type = self.determine_user_type(user_profile)
-        return self.adjust_config_for_user_type(base_config, user_type)
+        return self.adjust_config_for_user_type(base_config)
