@@ -2,8 +2,11 @@ from multiprocessing import get_logger
 from fastapi import APIRouter
 from app.application.ports.input.ai_sidejob_input_port import AISideJobInputPort
 from app.application.ports.input.generate_mission_input_port import GenerateMissionInputPort
+from app.application.ports.input.mission_step_generation_input_port import MissionStepGenerationInputPort
 from app.adapters.input.dto.generate_mission_request import GenerateMissionRequest
 from app.adapters.input.dto.generate_mission_response import GenerateMissionReponse
+from app.adapters.input.dto.generate_mission_step_request import GenerateMissionStepRequest
+from app.adapters.input.dto.generate_mission_step_response import GenerateMissionStepResponse
 from app.adapters.input.dto.onboarding_profile_dto import OnboardingProfileRequest
 from app.adapters.input.dto.side_job_response import SideJobResponse
 from app.infrastructure.dependency_injection import resolve
@@ -37,4 +40,15 @@ async def generate_missions(request: GenerateMissionRequest):
             message=f"미션 생성 실패: {str(e)}",
             tasks=[]
         )
-    
+
+@router.post("/generate-mission-step", response_model=GenerateMissionStepResponse)
+async def generate_mission_steps(request: GenerateMissionStepRequest):
+    try:
+        use_case = resolve(MissionStepGenerationInputPort)
+        return await use_case.generate_mission_steps(request)
+    except Exception as e:
+        return GenerateMissionStepResponse(
+            success=False,
+            message=f"미션 스텝 생성 실패: {str(e)}",
+            steps=[]
+        )

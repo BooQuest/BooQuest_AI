@@ -1,5 +1,6 @@
 import json
 from app.adapters.input.dto.generate_mission_request import GenerateMissionRequest
+from app.adapters.input.dto.generate_mission_step_request import GenerateMissionStepRequest
 from app.domain.entities.onboarding_profile import OnboardingProfile
 
 class PromptTemplates:
@@ -71,24 +72,65 @@ class PromptTemplates:
 - 디자인 노트: {requestDto.side_job_design_notes}
 
 다음 형식으로 JSON 응답을 제공해주세요:
+
+조건 
+note 는 반드시 "notes": \"{{\"설명\":\"미션에 대한 상세한 설명\"}}\" 와 같은 형태로 내보내주세요.
+
 ```json
 {{
     "result": [
         {{
             "title": "미션 제목",
-            "order_no": 1,
-            "notes": "미션에 대한 상세 설명"
+            "orderNo": 1,
+            "notes": "\"{{ "설명" : "미션에 대한 상세 설명"}}\""
         }},
         {{
             "title": "미션 제목",
-            "order_no": 2,
-            "notes": "미션에 대한 상세 설명"
+            "orderNo": 2,
+            "notes": "\"{{ "설명" : "미션에 대한 상세 설명"}}\""
         }}
     ]
 }}
 ```
 
-미션은 5개 입니다 
-생성하고, 각 미션은 구체적이고 실행 가능한 단계여야 합니다.
+        미션은 5개 입니다 
+        생성하고, 각 미션은 구체적이고 실행 가능한 단계여야 합니다.
+        """
+        return prompt.strip()
+
+    @staticmethod
+    def generate_mission_step_prompt(requestDto: GenerateMissionStepRequest) -> str:
+        """미션 스텝 생성을 위한 프롬프트 생성"""
+        prompt = f"""
+미션을 위한 상세 스텝을 생성해주세요.
+
+미션 정보:
+- 제목: {requestDto.mission_title}
+- 디자인 노트: {requestDto.mission_design_notes}
+
+다음 형식으로 JSON 응답을 제공해주세요:
+
+조건 
+detail은 반드시 "detail": \"{{\"설명\":\"스텝에 대한 상세한 설명\"}}\" 와 같은 형태로 내보내주세요.
+
+```json
+{{
+    "result": [
+        {{
+            "title": "스텝 제목",
+            "seq": 1,
+            "detail": "\"{{ "설명" : "스텝에 대한 상세 설명"}}\""
+        }},
+        {{
+            "title": "스텝 제목",
+            "seq": 2,
+            "detail": "\"{{ "설명" : "스텝에 대한 상세 설명"}}\""
+        }}
+    ]
+}}
+```
+
+미션 스텝은 5개 생성하고, 각 스텝은 구체적이고 실행 가능한 단계여야 합니다.
+스텝은 순차적으로 진행되어야 하며, 이전 스텝을 완료해야 다음 스텝으로 진행할 수 있어야 합니다.
         """
         return prompt.strip()

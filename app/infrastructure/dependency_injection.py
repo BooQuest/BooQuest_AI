@@ -1,5 +1,7 @@
 from typing import Type, TypeVar, Dict, Callable
 
+from app.application.usecases.ai_mission_step_generation_usecase import AIMissionStepGenerationUseCase
+
 T = TypeVar('T')
 
 def get_sidejob_generator():
@@ -16,9 +18,18 @@ def get_mission_generater():
     return LangGraphMissionAdapter()
 
 def get_mission_generation_use_case():
-    from app.application.usecases.mission_generation_usecase import AIGenerateMissionUseCase
+    from app.application.usecases.ai_mission_generation_usecase import AIGenerateMissionUseCase
     mission_generation_adapter = get_mission_generater()
     return AIGenerateMissionUseCase(mission_generation_adapter)
+
+def get_mission_step_generator():
+    from app.adapters.output.ai.langgraph_mission_step_adapter import LangGraphMissionStepAdapter
+    return LangGraphMissionStepAdapter()
+
+def get_mission_step_generation_use_case():
+    from app.application.usecases.ai_mission_step_generation_usecase import AIMissionStepGenerationUseCase
+    mission_step_generation_adapter = get_mission_step_generator()
+    return AIMissionStepGenerationUseCase(mission_step_generation_adapter)
 
 _dependency_factories: Dict[Type, Callable] = {}
 
@@ -34,6 +45,8 @@ def resolve(dependency_type: Type[T]) -> T:
 def setup_dependencies():
     from app.application.ports.input.generate_mission_input_port import GenerateMissionInputPort
     from app.application.ports.input.ai_sidejob_input_port import AISideJobInputPort
+    from app.application.ports.input.mission_step_generation_input_port import MissionStepGenerationInputPort
     
     register_dependency(AISideJobInputPort, get_ai_task_sidejob_usecase)
     register_dependency(GenerateMissionInputPort, get_mission_generation_use_case)
+    register_dependency(MissionStepGenerationInputPort, get_mission_step_generation_use_case)
