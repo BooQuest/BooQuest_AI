@@ -37,23 +37,24 @@ class PromptTemplates:
         {json.dumps(user_profile_dict, ensure_ascii=False, indent=2)}
 
         반드시 아래와 같은 형식으로만 응답하세요:
-
-        {{
-        "recommendations": [
+        ```json
             {{
-            "title": "부업 아이디어 제목",
-            "description": "추천 이유와 부업에 대한 설명"
-            }},
-            {{
-            "title": "부업 아이디어 제목",
-            "description": "추천 이유와 부업에 대한 설명"
-            }},
-            {{
-            "title": "부업 아이디어 제목",
-            "description": "추천 이유와 부업에 대한 설명"
+            "recommendations": [
+                {{
+                "title": "부업 아이디어 제목",
+                "description": "추천 이유와 부업에 대한 설명"
+                }},
+                {{
+                "title": "부업 아이디어 제목",
+                "description": "추천 이유와 부업에 대한 설명"
+                }},
+                {{
+                "title": "부업 아이디어 제목",
+                "description": "추천 이유와 부업에 대한 설명"
+                }}
+            ]
             }}
-        ]
-        }}
+        ```
         """
         return prompt.strip()
 
