@@ -8,7 +8,6 @@ class OnboardingProfile(BaseModel):
     hobbies: List[str]
     expressionStyle:  str
     strengthType: str
-    desiredSideJob: str = ""
     
     def to_dict(self) -> dict:
         return {
@@ -17,6 +16,5 @@ class OnboardingProfile(BaseModel):
             "hobbies": self.hobbies,
             "expressionStyle": self.expressionStyle,
             "strengthType": self.strengthType,
-            "desiredSideJob": self.desiredSideJob
         } 
     
