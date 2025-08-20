@@ -1,3 +1,5 @@
+import json
+import re
 from typing import Any, Optional, TypeVar
 from pydantic import BaseModel
 from app.infrastructure.logging import get_logger
@@ -52,3 +54,49 @@ class AIResponseReader:
             return match.group(1)
         
         return content
+
+
+    def parse_json_safely(self, text: str, logger) -> dict:
+        cleaned = (text or "").strip()
+        # 코드펜스 제거
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.I)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+        # BOM/따옴표 정리
+        cleaned = cleaned.replace("\ufeff", "").replace("“", "\"").replace("”", "\"").replace("’", "'")
+        # 1차 시도
+        try:
+            return json.loads(cleaned)
+        except Exception as e:
+            logger.debug(f"[parse_json_safely] loads fail: {e}")
+
+        # 바깥 { ... }만 추출
+        s, e = cleaned.find("{"), cleaned.rfind("}")
+        if s != -1 and e != -1 and e > s:
+            core = cleaned[s:e+1]
+            try:
+                return json.loads(core)
+            except Exception as e2:
+                logger.debug(f"[parse_json_safely] outer fail: {e2}")
+
+        # 단일 따옴표 → 쌍따옴표로 보수적 대체
+        try_single = re.sub(r"(?<!\\)'", '"', cleaned)
+        if try_single != cleaned:
+            try:
+                return json.loads(try_single)
+            except Exception as e3:
+                logger.debug(f"[parse_json_safely] single-quote fix fail: {e3}")
+
+        logger.error("[parse_json_safely] cannot parse JSON. head=%s", cleaned[:200])
+        raise ValueError("Invalid JSON")
+
+    def is_brace_balanced(self, s: str) -> bool:
+        c, in_str, esc = 0, False, False
+        for ch in s:
+            if ch == '"' and not esc:
+                in_str = not in_str
+            esc = (ch == '\\' and not esc) if in_str else False
+            if not in_str:
+                if ch == '{': c += 1
+                elif ch == '}': c -= 1
+                if c < 0: return False
+        return c == 0
