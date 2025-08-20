@@ -7,4 +7,3 @@ class OnboardingProfileRequest(BaseModel):
     hobbies: List[str]
     expressionStyle:  str
     strengthType: str
-    desiredSideJob: str
