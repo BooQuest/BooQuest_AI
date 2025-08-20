@@ -1,121 +1,163 @@
-from asyncio import tasks
 import json
-from typing import Dict, List, TypedDict
-from langgraph.graph import StateGraph, END
-from app.adapters.input.dto.generate_mission_step_response import GenerateMissionStepResponse
-from app.application.ports.output.mission_step_generation_output_port import MissionStepGenerationOutputPort
-from app.domain.entities.mission_step import MissionStep
-from app.adapters.input.dto.generate_mission_step_request import GenerateMissionStepRequest
-from app.adapters.input.dto.generate_mission_step_response import GenerateMissionStepResponse
+from typing import Dict, Any, List, TypedDict, Optional, Union
+from app.application.ports.output.ai_sidejob_output_port import AISideJobOutputPort
 from app.infrastructure.logging import get_logger
 from app.infrastructure.config import get_settings
 from app.infrastructure.services.utils.ai_config_factory import AIConfigFactory
 from app.infrastructure.services.utils.ai_response_reader import AIResponseReader
+from app.infrastructure.services.utils.prompt_templates import PromptTemplates
+from app.domain.entities.onboarding_profile import OnboardingProfile
+from app.domain.entities.regenerate_side_job import RegenerateSideJobRequest
+from app.adapters.input.dto.side_job_response import SideJobResponse, SideJobItem
+from langgraph.graph import StateGraph, END
 
-class MissionStepTaskState(TypedDict):
+
+class SideJobTaskState(TypedDict):
     messages: Dict[str, str]
-    mission_step_request: GenerateMissionStepRequest
-    generated_steps: List[MissionStep]
+    user_profile: OnboardingProfile
+    task_ideas: List[Dict[str, Any]]
+    prompt: Optional[str]
 
-class LangGraphMissionStepAdapter(MissionStepGenerationOutputPort):
+
+class RegenerateSideJobTaskState(TypedDict):
+    messages: Dict[str, str]
+    regenerate_request: RegenerateSideJobRequest
+    task_ideas: List[Dict[str, Any]]
+    prompt: Optional[str]
+
+
+class LangGraphSideJobAdapter(AISideJobOutputPort):
     def __init__(self):
-        self.logger = get_logger("LangGraphMissionStepAdapter")
+        self.logger = get_logger("LangGraphSideJobAdapter")
         self.settings = get_settings()
         self.ai_config_factory = AIConfigFactory()
         self.response_reader = AIResponseReader()
-        self.workflow = self._create_workflow()
-    
-    def _create_workflow(self) -> StateGraph:
-        workflow = StateGraph(MissionStepTaskState)
-        
-        workflow.add_node("generate_mission_steps", self._generate_mission_steps)
-        workflow.set_entry_point("generate_mission_steps")
-        workflow.add_edge("generate_mission_steps", END)
-        
+
+        self.workflow_for_sidejob = self._create_workflow(SideJobTaskState, self._generate_task_ideas_for_sidejob)
+        self.workflow_for_regeneration = self._create_workflow(RegenerateSideJobTaskState, self._regenerate_task_ideas_with_feedback)
+
+    def _create_workflow(self, state_type, handler_fn) -> StateGraph:
+        workflow = StateGraph(state_type)
+        workflow.add_node("generate_tasks", handler_fn)
+        workflow.set_entry_point("generate_tasks")
+        workflow.add_edge("generate_tasks", END)
         return workflow.compile()
-    
-    async def _generate_mission_steps(self, state: MissionStepTaskState) -> MissionStepTaskState:
+
+    async def _generate_task_ideas_for_sidejob(self, state: SideJobTaskState) -> SideJobTaskState:
         try:
             import openai
-            client = openai.OpenAI(
-                api_key=self.settings.clova_x_api_key,
-                base_url=self.settings.clova_x_base_url
-            )
-            
-            messages = state['messages']
-            
-            # AI 설정 생성
-            model_config = self.ai_config_factory.create_ai_config(
-                self.settings.clova_x_provider,
-                self.settings.clova_x_model
-            )
-            
-            # API 호출 파라미터 준비
+            client = openai.OpenAI(api_key=self.settings.clova_x_api_key, base_url=self.settings.clova_x_base_url)
+            model_config = self.ai_config_factory.create_ai_config(self.settings.clova_x_provider, self.settings.clova_x_model)
+
             api_params = {
                 "model": model_config.model,
-                "messages": [messages],
+                "messages": [state["messages"]],
                 "temperature": model_config.temperature,
                 "top_p": model_config.top_p,
                 "stream": model_config.streaming
             }
-            
-            # max_tokens가 None이 아닌 경우에만 추가
             if model_config.max_tokens is not None:
                 api_params["max_tokens"] = model_config.max_tokens
-            
-            # 응답 받기
-            response = client.chat.completions.create(**api_params)
-            
-            # AIResponseReader의 공통 기능을 사용하여 응답 처리
-            response_content = self.response_reader.read_ai_response(
-                response, 
-                is_streaming=model_config.streaming
-            )
-            
-            # MissionStep 배열로 파싱
-            try:
-                from app.domain.entities.mission_step import MissionStep
-                
-                steps = json.loads(response_content)
-                state["generated_steps"] = steps.get("result", []) 
-                
-            except Exception as e:
-                self.logger.error(f"MissionStep 파싱 실패: {str(e)}")
-                state["generated_steps"] = []
-            
-            return state
-            
-        except openai.APIConnectionError as e:
-            self.logger.error(f"Clova API 연결 오류: {str(e)}")
-            state["generated_steps"] = []
-            return state
-        except Exception as e:
-            self.logger.error(f"미션 스텝 생성 실패: {str(e)}")
-            state["generated_steps"] = []
-            return state
-    
 
-    
-    async def generate_mission_steps(self, messages: Dict[str, str], request: GenerateMissionStepRequest) -> List[MissionStep]:
-        try:
-            initial_state = MissionStepTaskState(
-                messages=messages,
-                mission_step_request=request,
-                generated_steps=[]
-            )
-            
-            final_state = await self.workflow.ainvoke(initial_state)
-            missionSteps = final_state["generated_steps"]
-            
-            if not missionSteps:
-                raise ValueError("AI 응답에서 부퀘스트 리스트가 비어 있습니다.")
-            
-            return GenerateMissionStepResponse(
-                success=True,
-                message="미션 생성 완료",
-                steps=[MissionStep(**item) for item in missionSteps],
-            )
-            
+            response = client.chat.completions.create(**api_params)
+            response_content = self.response_reader.read_ai_response(response, model_config.streaming)
+
+            try:
+                state["task_ideas"] = json.loads(response_content).get("recommendations", [])
+            except json.JSONDecodeError as e:
+                self.logger.error(f"JSON 파싱 실패: {str(e)}")
+                state["task_ideas"] = []
+
+            return state
+
         except Exception as e:
-            self.logger.error(f"LangGraph 미션 스텝 생성 실패: {str(e)}")
-            raise
+            self.logger.error(f"부업 태스크 생성 실패: {str(e)}")
+            state["task_ideas"] = []
+            return state
+
+    async def _regenerate_task_ideas_with_feedback(self, state: RegenerateSideJobTaskState) -> RegenerateSideJobTaskState:
+        try:
+            import openai
+            client = openai.OpenAI(api_key=self.settings.clova_x_api_key, base_url=self.settings.clova_x_base_url)
+            model_config = self.ai_config_factory.create_ai_config(self.settings.clova_x_provider, self.settings.clova_x_model)
+
+            api_params = {
+                "model": model_config.model,
+                "messages": [state["messages"]],
+                "temperature": model_config.temperature,
+                "top_p": model_config.top_p,
+                "stream": model_config.streaming
+            }
+            if model_config.max_tokens is not None:
+                api_params["max_tokens"] = model_config.max_tokens
+
+            response = client.chat.completions.create(**api_params)
+            response_content = self.response_reader.read_ai_response(response, model_config.streaming)
+
+            try:
+                state["task_ideas"] = json.loads(response_content).get("recommendations", [])
+            except json.JSONDecodeError as e:
+                self.logger.error(f"JSON 파싱 실패: {str(e)}")
+                state["task_ideas"] = []
+
+            return state
+
+        except Exception as e:
+            self.logger.error(f"부업 재생성 실패: {str(e)}")
+            state["task_ideas"] = []
+            return state
+
+    async def generate_tasks_for_sidejob(
+        self,
+        messages_or_request: Union[Dict[str, str], RegenerateSideJobRequest],
+        onboarding_profile: Optional[OnboardingProfile] = None
+    ) -> SideJobResponse:
+        try:
+            if isinstance(messages_or_request, dict):
+                if onboarding_profile is None:
+                    raise ValueError("OnboardingProfile은 필수입니다.")
+
+                initial_state = SideJobTaskState(
+                    messages=messages_or_request,
+                    user_profile=onboarding_profile,
+                    task_ideas=[],
+                    prompt=messages_or_request.get("content", "")
+                )
+                result = await self.workflow_for_sidejob.ainvoke(initial_state)
+                task_ideas = result["task_ideas"]
+                prompt = result["prompt"] or messages_or_request.get("content", "")
+
+            elif isinstance(messages_or_request, RegenerateSideJobRequest):
+                initial_state = RegenerateSideJobTaskState(
+                    messages={},
+                    regenerate_request=messages_or_request,
+                    task_ideas=[],
+                    prompt=""
+                )
+                print("init", initial_state)
+                result = await self.workflow_for_regeneration.ainvoke(initial_state)
+                print("result", result)
+                task_ideas = result["task_ideas"]
+                prompt = result["prompt"]
+
+            else:
+                raise TypeError("지원하지 않는 타입입니다.")
+
+            if not task_ideas:
+                raise ValueError("AI 응답에서 부업 리스트가 비어 있습니다.")
+
+            return SideJobResponse(
+                success=True,
+                message="부업 생성 완료",
+                tasks=[SideJobItem(**item) for item in task_ideas],
+                prompt=prompt
+            )
+
+        except Exception as e:
+            self.logger.error(f"부업 생성 실패: {str(e)}")
+            return SideJobResponse(
+                success=False,
+                message=f"부업 생성 실패: {str(e)}",
+                tasks=[],
+                prompt=""
+            )

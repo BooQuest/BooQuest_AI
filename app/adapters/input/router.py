@@ -8,9 +8,12 @@ from app.adapters.input.dto.generate_mission_response import GenerateMissionRepo
 from app.adapters.input.dto.generate_mission_step_request import GenerateMissionStepRequest
 from app.adapters.input.dto.generate_mission_step_response import GenerateMissionStepResponse
 from app.adapters.input.dto.onboarding_profile_dto import OnboardingProfileRequest
+from app.adapters.input.dto.regenerate_side_job_request import RegenerateSideJobRequest
 from app.adapters.input.dto.side_job_response import SideJobResponse
 from app.infrastructure.dependency_injection import resolve
 from app.infrastructure.logging import get_logger
+
+import traceback
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 logger = get_logger("AIHttpAdapter")
@@ -51,4 +54,20 @@ async def generate_mission_steps(request: GenerateMissionStepRequest):
             success=False,
             message=f"미션 스텝 생성 실패: {str(e)}",
             steps=[]
+        )
+    
+@router.post("/regenerate-side-job", response_model=SideJobResponse)
+async def generate_side_job(request: RegenerateSideJobRequest):
+    try:
+        ai_input_port = resolve(AISideJobInputPort)
+        return await ai_input_port.regenerate_side_jobs(request)  
+    
+    except Exception as e:
+        error_detail = traceback.format_exc()
+        logger.exception(error_detail) 
+        return SideJobResponse(
+            success=False,
+            message=f"부업 생성 실패: {str(e)}",
+            tasks=[],
+            prompt=""
         )

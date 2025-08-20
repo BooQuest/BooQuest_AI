@@ -2,6 +2,7 @@ from typing import Dict, Any
 from app.application.ports.input.ai_sidejob_input_port import AISideJobInputPort
 from app.application.ports.output.ai_sidejob_output_port import AISideJobOutputPort
 from app.domain.entities.onboarding_profile import OnboardingProfile
+from app.domain.entities.regenerate_side_job import RegenerateSideJobRequest
 from app.infrastructure.logging import get_logger
 from app.infrastructure.services.utils.prompt_templates import PromptTemplates
 
@@ -27,3 +28,17 @@ class AIGenerateSideJobUseCase(AISideJobInputPort):
 
         return await self.ai_output_port.generate_tasks_for_sidejob(messages, onboarding_profile_request)
     
+    # 피드백 기반 부업 재생성
+    async def regenerate_side_jobs(self, regenerate_request: RegenerateSideJobRequest) -> Dict[str, Any]:
+        onboarding_profile = OnboardingProfile(
+            personality=regenerate_request.personality,
+            job=regenerate_request.generateSideJobRequest.job,
+            hobbies=regenerate_request.generateSideJobRequest.hobbies,
+            expressionStyle=regenerate_request.generateSideJobRequest.expressionStyle,
+            strengthType=regenerate_request.generateSideJobRequest.strengthType
+        )
+
+        prompt = PromptTemplates.regenerate_sidejob_prompt_by_feedback(regenerate_request)
+
+        messages = {"role": "user", "content": prompt}
+        return await self.ai_output_port.generate_tasks_for_sidejob(messages, onboarding_profile)
