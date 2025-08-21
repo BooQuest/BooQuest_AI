@@ -120,7 +120,7 @@ jobs:
               --restart unless-stopped \
               --network booquest-net \
               --network-alias booquest-ai-worker \
-              -v "$CONFIG_PATH":/app/config:ro \          
+              -v "$CONFIG_PATH":/app/config:ro \
               -e PYTHONPATH=/app \
               "$IMG_WORKER"
 
