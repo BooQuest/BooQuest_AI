@@ -1,0 +1,59 @@
+services:
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "PING"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: api_app
+    command: >
+      uvicorn api_app.main:app
+      --host 0.0.0.0
+      --port 8081
+      --timeout-keep-alive 75
+    volumes:
+      - .:/app
+    env_file: config/.env  
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      valkey:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    container_name: worker_app
+    # 태스크 모듈을 확실히 로드 (-I)
+    command: >
+      celery -A packages.infrastructure.celery_app.celery_app
+      worker -l info
+      -I worker_app.tasks.ai_tasks
+      -Q ai
+    volumes:
+      - .:/app
+    env_file: config/.env  
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  valkey_data:
