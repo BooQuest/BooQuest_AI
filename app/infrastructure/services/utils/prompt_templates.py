@@ -1,4 +1,5 @@
 import json, os
+from typing import Dict
 from app.adapters.input.dto.generate_mission_request import GenerateMissionRequest
 from app.adapters.input.dto.generate_mission_step_request import GenerateMissionStepRequest
 from app.domain.entities.onboarding_profile import OnboardingProfile
@@ -135,6 +136,21 @@ class PromptTemplates:
             "title": "미션 제목",
             "orderNo": 2,
             "notes": "미션에 대한 상세 설명"
+        }},
+        {{
+            "title": "미션 제목",
+            "orderNo": 3,
+            "notes": "미션에 대한 상세 설명"
+        }},
+        {{
+            "title": "미션 제목",
+            "orderNo": 4,
+            "notes": "미션에 대한 상세 설명"
+        }},
+        {{
+            "title": "미션 제목",
+            "orderNo": 5,
+            "notes": "미션에 대한 상세 설명"
         }}
     ]
 }}
@@ -168,6 +184,21 @@ class PromptTemplates:
         {{
             "title": "스텝 제목",
             "seq": 2,
+            "detail": "스텝에 대한 상세 설명"
+        }},
+        {{
+            "title": "스텝 제목",
+            "seq": 3,
+            "detail": "스텝에 대한 상세 설명"
+        }},
+        {{
+            "title": "스텝 제목",
+            "seq": 4,
+            "detail": "스텝에 대한 상세 설명"
+        }},
+        {{
+            "title": "스텝 제목",
+            "seq": 5,
             "detail": "스텝에 대한 상세 설명"
         }}
     ]
@@ -271,3 +302,4 @@ class PromptTemplates:
         ```
         """
         return prompt.strip()
+        

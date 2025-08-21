@@ -67,15 +67,18 @@ class LangGraphMissionAdapter(GenerateMissionOutputPort):
                 response, 
                 is_streaming=model_config.streaming
             )
-            
+
+             # 스트리밍이면 조립 검증
+            if model_config.streaming and not self.response_reader.is_brace_balanced(response_content):
+                self.logger.warning("JSON brace not balanced; trying repair once.")
+
+            # 1차: 관용 파싱
             try:
-                parsed_data = json.loads(response_content)
-                state["generated_missions"] = parsed_data.get("result", [])                
+                parsed_data = self.response_reader.parse_json_safely(response_content, self.logger)
+                state["generated_missions"] = parsed_data.get("result", []) if isinstance(parsed_data, dict) else []
+                return state
             except Exception as e:
-                self.logger.error(f"MissionDraft 파싱 실패: {str(e)}")
-                state["generated_missions"] = []
-            
-            return state
+                self.logger.warning(f"Parse fail; try LLM repair once. err={e}")
             
         except openai.APIConnectionError as e:
             self.logger.error(f"Clova API 연결 오류: {str(e)}")
@@ -108,8 +111,7 @@ class LangGraphMissionAdapter(GenerateMissionOutputPort):
             return GenerateMissionReponse(
                 success=True,
                 message="미션 생성 완료",
-                tasks=[MissionDraft(**item) for item in missions],
-                prompt=messages.get("content", "") 
+                tasks=[MissionDraft(**item) for item in missions]
             )
             
         except Exception as e:
