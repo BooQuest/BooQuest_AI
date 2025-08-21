@@ -14,4 +14,4 @@ COPY worker_app ./worker_app
 
 ENV PYTHONPATH=/app
 
-CMD ["celery","-A","packages.infrastructure.celery_app.celery_app","worker","--loglevel=INFO","-I","worker_app.tasks.ai_tasks"]
+CMD ["celery","-A","packages.infrastructure.celery_app.celery_app","worker","--loglevel=INFO","-I","worker_app.tasks.ai_tasks", "-Q","ai"]
