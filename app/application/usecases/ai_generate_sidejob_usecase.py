@@ -5,6 +5,7 @@ from app.domain.entities.onboarding_profile import OnboardingProfile
 from app.domain.entities.regenerate_side_job import RegenerateSideJobRequest
 from app.infrastructure.logging import get_logger
 from app.infrastructure.services.utils.prompt_templates import PromptTemplates
+from app.infrastructure.services.utils.prompt_templates import SIDE_JOB_SYSTEM_PROMPT
 
 class AIGenerateSideJobUseCase(AISideJobInputPort):
     def __init__(self, ai_output_port: AISideJobOutputPort):
@@ -22,9 +23,12 @@ class AIGenerateSideJobUseCase(AISideJobInputPort):
         )
         
         # 공통 프롬프트 템플릿 사용
-        prompt = PromptTemplates.generate_recommendation_sidejob_prompt(onboarding_profile_request)
+        user_prompt = PromptTemplates.generate_recommendation_sidejob_user_prompt(onboarding_profile_request)
 
-        messages = {"role": "user", "content": prompt}
+        messages = [
+            {"role": "system", "content": SIDE_JOB_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
+        ]
 
         return await self.ai_output_port.generate_tasks_for_sidejob(messages, onboarding_profile_request)
     
@@ -38,7 +42,10 @@ class AIGenerateSideJobUseCase(AISideJobInputPort):
             strengthType=regenerate_request.generateSideJobRequest.strengthType
         )
 
-        prompt = PromptTemplates.regenerate_sidejob_prompt_by_feedback(regenerate_request)
+        user_prompt = PromptTemplates.regenerate_sidejob_prompt_by_feedback(regenerate_request)
 
-        messages = {"role": "user", "content": prompt}
+        messages = [
+            {"role": "system", "content": SIDE_JOB_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
+        ]
         return await self.ai_output_port.generate_tasks_for_sidejob(messages, onboarding_profile)
