@@ -7,11 +7,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY packages ./packages
-COPY api_app ./api_app
-COPY worker_app ./worker_app
+COPY apps/api ./apps/api
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 EXPOSE 8081
 
-CMD ["uvicorn","api_app.main:app","--host","0.0.0.0","--port","8081"]
+CMD ["uvicorn","apps.api.main:app","--host","0.0.0.0","--port","8081"]

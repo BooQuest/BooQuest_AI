@@ -1,22 +1,28 @@
+"""온보딩 프로필 도메인 엔티티 - 가이드 기준."""
+
 from dataclasses import dataclass
 from typing import List
-from pydantic import BaseModel
 
-# 사용자 프로필 엔티티
-@dataclass(frozen=True)
-class OnboardingProfile(BaseModel):
-    personality: str
+
+@dataclass
+class OnboardingProfile:
+    """온보딩 프로필 도메인 엔티티."""
+    
+    user_id: int
+    nickname: str
     job: str
     hobbies: List[str]
-    expressionStyle:  str
-    strengthType: str
+    expression_style: str
+    strength_type: str
     
     def to_dict(self) -> dict:
+        """딕셔너리로 변환."""
         return {
-            "personality": self.personality,
+            "user_id": self.user_id,
+            "nickname": self.nickname,
             "job": self.job,
             "hobbies": self.hobbies,
-            "expressionStyle": self.expressionStyle,
-            "strengthType": self.strengthType,
+            "expression_style": self.expression_style,
+            "strength_type": self.strength_type,
         } 
     

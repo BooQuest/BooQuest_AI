@@ -10,8 +10,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY packages ./packages
 
-COPY worker_app ./worker_app
+COPY apps/worker ./apps/worker
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app LANG=C.UTF-8 LC_ALL=C.UTF-8
 
-CMD ["celery","-A","packages.infrastructure.celery_app.celery_app","worker","--loglevel=INFO","-I","worker_app.tasks.ai_tasks", "-Q","ai"]
+CMD ["celery","-A","packages.presentation.worker.celery_app.celery_app","worker","--loglevel=INFO","-I","apps.worker.ai_tasks", "-Q","ai"]

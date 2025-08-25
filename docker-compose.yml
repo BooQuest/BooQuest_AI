@@ -16,9 +16,9 @@ services:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    container_name: api_app
+    container_name: ai_api
     command: >
-      uvicorn api_app.main:app
+      uvicorn apps.api.main:app
       --host 0.0.0.0
       --port 8081
       --timeout-keep-alive 75
@@ -38,12 +38,11 @@ services:
     build:
       context: .
       dockerfile: docker/worker.Dockerfile
-    container_name: worker_app
-    # 태스크 모듈을 확실히 로드 (-I)
+    container_name: ai_worker
+    # 현재 구조에 맞게 수정
     command: >
-      celery -A packages.infrastructure.celery_app.celery_app
+      celery -A packages.presentation.worker.celery_app.celery_app
       worker -l info
-      -I worker_app.tasks.ai_tasks
       -Q ai
     volumes:
       - .:/app
