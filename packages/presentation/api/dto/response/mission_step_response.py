@@ -9,5 +9,5 @@ class MissionStepResponse(BaseModel):
     id: int
     title: str
     seq: int
-    status: str
+    status: str = "PLANNED"  # 기본값 설정
     detail: str
