@@ -8,4 +8,3 @@ class MissionResponse(BaseModel):
     title: str
     order: int
     design_notes: str
-    status: str = "PLANNED"  # 기본값 설정

@@ -53,16 +53,22 @@ async def missions_generate(
         # AI 생성 및 저장
         saved_entities = await service.generate_missions(request.model_dump())
         
-        # API 응답 DTO로 변환
-        return [
-            MissionResponse(
-                id=entity["id"],
-                title=entity["title"],
-                order=entity["order_no"],
-                design_notes=entity["design_notes"]
+        # 응답 데이터 정제 및 DTO로 변환
+        response = []
+        for entity in saved_entities:
+            # 불필요한 필드 제거
+            entity.pop("status", None)
+
+            # MissionResponse로 변환
+            response.append(
+                MissionResponse(
+                    id=entity["id"],
+                    title=entity["title"],
+                    order=entity["order_no"],
+                    design_notes=entity["design_notes"]
+                )
             )
-            for entity in saved_entities
-        ]
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"미션 생성 실패: {str(e)}")
 
