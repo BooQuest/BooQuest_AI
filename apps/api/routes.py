@@ -1,6 +1,6 @@
 """API 라우트."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from dependency_injector.wiring import inject, Provide
 from typing import List
 from packages.core.external.langgraph.workflow import LangGraphWorkflowService
@@ -116,27 +116,29 @@ async def side_jobs_generate_all(
         raise HTTPException(status_code=500, detail=f"사이드잡 재생성 실패: {str(e)}")
 
 
-@router.post("/regenerate-side-job", response_model=List[SideJobResponse])
+@router.post("/regenerate-side-job/{sideJobId}", response_model=SideJobResponse)
 @inject
 async def side_jobs_regenerate(
     request: SideJobRegenerateRequest,
+    sideJobId: int = Path(..., description="재생성할 사이드잡 ID"),
     service: LangGraphWorkflowService = Depends(Provide[Container.langgraph_workflow])
 ):
     """사이드잡을 재생성하고 저장합니다."""
     try:
+        data = request.model_dump()
+        data["side_job_id"] = sideJobId
+        
         # AI 재생성 및 저장
-        saved_entities = await service.regenerate_side_jobs(request.model_dump())
+        entity = await service.regenerate_side_job(data)
         
         # API 응답 DTO로 변환
-        return [
-            SideJobResponse(
-                id=entity["id"],
-                title=entity["title"],
-                description=entity["description"],
-                is_selected=entity["is_selected"]
-            )
-            for entity in saved_entities
-        ]
+        return SideJobResponse(
+            id=entity["id"],
+            title=entity["title"],
+            description=entity["description"],
+            is_selected=entity["is_selected"]
+        )
+ 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"사이드잡 재생성 실패: {str(e)}")
 

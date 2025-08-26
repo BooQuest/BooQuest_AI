@@ -15,6 +15,7 @@ class SaveSideJobNode(BaseSaveNode[SideJobState]):
     
     def save_side_jobs(self, state: SideJobState) -> SideJobState:
         """사이드잡을 저장합니다."""
+        self.logger.info(f"[SaveSideJobNode] userId: {state.get('user_id')}")
         side_job_ids = state.get("side_job_ids", None)
         self.logger.info(f"[SaveSideJobNode] 전달된 side_job_ids: {side_job_ids}")
         state["side_job_ids"] = side_job_ids
@@ -24,14 +25,14 @@ class SaveSideJobNode(BaseSaveNode[SideJobState]):
         for i, job in enumerate(side_jobs):
             job["_index"] = i
             if side_job_ids and i < len(side_job_ids):
-                job["id"] = side_job_ids[i]  # ✅ 여기에 바로 ID 주입
+                job["id"] = side_job_ids[i]  # 여기에 바로 ID 주입
             self.logger.info(f"[SaveSideJobNode] 주입된 _index: {i}, id: {job.get('id')}, title: {job.get('title')}")
 
         # 엔티티를 state에 넣어줘야 save_entities가 처리할 수 있음
         state["side_jobs"] = side_jobs
 
         return self.save_entities(state, "side_jobs")
-    
+
     def _prepare_data(self, entity: Dict[str, Union[int, str, bool]], state: SideJobState) -> Dict[str, Union[int, str, bool]]:
         """저장할 데이터를 준비합니다."""
         

@@ -205,12 +205,13 @@ class LangGraphWorkflowService:
             self.logger.error(f"사이드잡 전체 재생성 실패: {e}")
             raise
 
-    async def regenerate_side_jobs(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def regenerate_side_job(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """사이드잡을 재생성합니다."""
         try:
             # SideJobRegenerateRequest 구조에 맞게 데이터 변환
             profile_data = request_data.get("generate_side_job_request", {})
             feedback_data = request_data.get("feedback_data", {})
+            sidejob_id = request_data.get("side_job_id")
             
             # 피드백 정보를 profile_data에 추가
             profile_data.update({
@@ -220,11 +221,13 @@ class LangGraphWorkflowService:
             
             initial_state = self._create_initial_state(
                 profile_data=profile_data,
-                user_id=profile_data.get("user_id")
+                user_id=profile_data.get("userId"),
+                side_job_ids=[sidejob_id] if sidejob_id else None
             )
-            
+
+             # AI 재생성 및 저장
             result = await self.regenerate_side_job_workflow.ainvoke(initial_state)
-            return result.get("saved_entities", [])
+            return result.get("saved_entities", [])[0]
         except Exception as e:
             self.logger.error(f"사이드잡 재생성 실패: {e}")
             raise
