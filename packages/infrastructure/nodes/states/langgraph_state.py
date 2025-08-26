@@ -18,6 +18,7 @@ class BaseState(TypedDict):
 class SideJobState(BaseState):
     """사이드잡 생성 상태."""
     profile_data: Dict[str, Any]  # 입력 데이터
+    side_job_ids: Optional[List[int]] = None  # 사이드잡 전체 재생성에만 필요한 필드
 
 
 class MissionState(BaseState):
