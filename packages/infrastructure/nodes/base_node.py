@@ -63,7 +63,7 @@ class BaseSaveNode(BaseNode[T]):
                 return self._update_state(state, {"saved_entities": []})
             
             with self.uow_factory() as uow:
-                saved_entities = self._upsert_entities(uow, entities, state)
+                saved_entities = self._process_entities(uow, entities, state)
                 
                 # 저장 후 후처리 훅 실행 (같은 트랜잭션에서)
                 if post_save_hook:
@@ -138,38 +138,6 @@ class BaseSaveNode(BaseNode[T]):
         
         return entities
     
-    def _upsert_entities(self, uow: Session, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
-        if not entities:
-            return []
-
-        insert_data = []
-        for entity in entities:
-            prepared = self._prepare_data(entity, state)
-            if entity.get("id") is not None:
-                prepared["id"] = entity["id"]
-            insert_data.append(prepared)
-
-        has_id = any("id" in d and d["id"] is not None for d in insert_data)
-
-        stmt = pg_insert(self.table).values(insert_data)
-
-        if has_id:
-            update_fields = {k: stmt.excluded[k] for k in insert_data[0] if k != "id"}
-            stmt = stmt.on_conflict_do_update(
-                index_elements=[self.table.c.id],
-                set_=update_fields
-            )
-
-        stmt = stmt.returning(self.table.c.id)
-        result = uow.session.execute(stmt)
-        returned_ids = result.fetchall()
-
-        for i, entity in enumerate(entities):
-            if i < len(returned_ids):
-                entity["id"] = returned_ids[i][0]
-                entity.update(insert_data[i])
-
-        return entities
     @abstractmethod
     def _prepare_data(self, entity: Dict[str, Union[int, str, bool]], state: T) -> Dict[str, Union[int, str, bool]]:
         """데이터 준비 (INSERT/UPDATE 공통)."""
