@@ -1,9 +1,10 @@
 """공통 노드 베이스 클래스 - 중복 제거 및 API 응답 최적화."""
 
 from abc import ABC, abstractmethod
+from contextlib import AbstractContextManager
 from typing import Dict, List, TypeVar, Generic, Union, Optional
 from sqlalchemy import insert, update, Table
-from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from packages.infrastructure.logging import get_logger
 from packages.infrastructure.nodes.states.langgraph_state import LangGraphState
@@ -94,7 +95,7 @@ class BaseSaveNode(BaseNode[T]):
             self.logger.error(f"{entity_key} 저장 실패: {e}")
             raise
     
-    def _process_entities(self, uow: Session, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
+    def _process_entities(self, uow: AbstractContextManager, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
         """엔티티 처리 (INSERT/UPDATE)."""
         if not entities:
             return []
@@ -106,7 +107,7 @@ class BaseSaveNode(BaseNode[T]):
         else:
             return self._insert_entities(uow, entities, state)
     
-    def _update_entities(self, uow: Session, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
+    def _update_entities(self, uow: AbstractContextManager, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
         """엔티티 업데이트."""
         for entity in entities:
             update_data = self._prepare_data(entity, state)
@@ -120,7 +121,7 @@ class BaseSaveNode(BaseNode[T]):
         # UPDATE의 경우 원본 entities를 그대로 반환 (ID가 이미 있음)
         return entities
     
-    def _insert_entities(self, uow: Session, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
+    def _insert_entities(self, uow: AbstractContextManager, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
         """엔티티 삽입."""
         insert_data = [self._prepare_data(entity, state) for entity in entities]
         stmt = insert(self.table).values(insert_data).returning(self.table.c.id)

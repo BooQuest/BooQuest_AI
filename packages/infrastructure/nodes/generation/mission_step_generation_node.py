@@ -1,7 +1,6 @@
 """미션 스텝 생성을 위한 LangGraph 노드."""
 
 from typing import Dict, Union, List
-from langchain_core.output_parsers import PydanticOutputParser
 from packages.infrastructure.config.config import get_settings
 from packages.infrastructure.nodes.base_node import BaseGenerationNode
 from packages.infrastructure.prompts.mission_step_prompts import MissionStepPrompts
@@ -22,34 +21,38 @@ class MissionStepGenerationNode(BaseGenerationNode[MissionStepState]):
             api_key=self.settings.clova_x_api_key,
             base_url=self.settings.clova_x_base_url,
             model=self.settings.clova_x_model,
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=1024,  # Set max tokens larger than 1024 to use tool calling
+            thinking={
+                "effort": "none"  # Set to "none" to disable thinking, as structured outputs are incompatible with thinking
+            },
         )
         
-        # Output Parser 설정
-        self.output_parser = PydanticOutputParser(pydantic_object=MissionStepsAIResponse)
+        # Structured Output 설정
+        self.llm = self.llm.with_structured_output(MissionStepsAIResponse, method="json_schema")
         
         # 프롬프트 템플릿
         self.prompt_templates = MissionStepPrompts()
     
-    async def __call__(self, state: MissionStepState) -> MissionStepState:
+    def __call__(self, state: MissionStepState) -> MissionStepState:
         """노드 실행."""
         try:
             # 프롬프트 데이터 준비
             prompt_data = self._prepare_prompt_data(state)
             
-            # 프롬프트 생성 및 format_instructions 적용
-            prompt = self.prompt_templates.create_prompt_template(**prompt_data).partial(
-                format_instructions=self.output_parser.get_format_instructions()
-            )
+            # 프롬프트 생성
+            prompt = self.prompt_templates.create_prompt_template()
             
             # Chain 구성 및 실행
-            chain = prompt | self.llm | self.output_parser
+            chain = prompt | self.llm
             result = chain.invoke(prompt_data)
             
             self.logger.info(f"미션 스텝 생성 완료: {len(result.mission_steps)}개")
             
             # 공통 상태 업데이트 메서드 사용
-            return self._update_generation_state(state, result)
+            updated_state = self._update_generation_state(state, result)
+            
+            return updated_state
             
         except Exception as e:
             self.logger.error(f"미션 스텝 생성 중 오류: {str(e)}")
