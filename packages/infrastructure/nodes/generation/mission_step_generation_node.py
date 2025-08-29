@@ -28,21 +28,20 @@ class MissionStepGenerationNode(BaseGenerationNode[MissionStepState]):
             },
         )
         
-        # Structured Output 설정
         self.llm = self.llm.with_structured_output(MissionStepsAIResponse, method="json_schema")
         
         # 프롬프트 템플릿
         self.prompt_templates = MissionStepPrompts()
     
-    def __call__(self, state: MissionStepState) -> MissionStepState:
+    async def __call__(self, state: MissionStepState) -> MissionStepState:
         """노드 실행."""
         try:
             # 프롬프트 데이터 준비
             prompt_data = self._prepare_prompt_data(state)
             
-            # 프롬프트 생성
+            # 프롬프트 생성 및 format_instructions 적용
             prompt = self.prompt_templates.create_prompt_template()
-            
+
             # Chain 구성 및 실행
             chain = prompt | self.llm
             result = chain.invoke(prompt_data)
@@ -50,9 +49,7 @@ class MissionStepGenerationNode(BaseGenerationNode[MissionStepState]):
             self.logger.info(f"미션 스텝 생성 완료: {len(result.mission_steps)}개")
             
             # 공통 상태 업데이트 메서드 사용
-            updated_state = self._update_generation_state(state, result)
-            
-            return updated_state
+            return self._update_generation_state(state, result)
             
         except Exception as e:
             self.logger.error(f"미션 스텝 생성 중 오류: {str(e)}")
