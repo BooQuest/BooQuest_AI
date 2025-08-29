@@ -28,6 +28,7 @@ class SaveMissionNode(BaseSaveNode[MissionState]):
             "title": entity.get("title", ""),
             "order_no": entity.get("orderNo", 1),
             "design_notes": entity.get("notes", ""),
+            "guide": entity.get("guide", ""),
             "status": "PLANNED"
         }
     

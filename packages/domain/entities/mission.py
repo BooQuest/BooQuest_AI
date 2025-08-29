@@ -19,6 +19,7 @@ Mission = Table(
     Column("title", String(255), nullable=False),
     Column("order_no", Integer, nullable=False),
     Column("design_notes", Text, nullable=True),
+    Column("guide", Text, nullable=True),
     Column("status", String(50), default=MissionStatus.PLANNED),
     Column("created_at", DateTime, default=datetime.utcnow),
     

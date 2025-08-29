@@ -65,7 +65,8 @@ async def missions_generate(
                     id=entity["id"],
                     title=entity["title"],
                     order=entity["order_no"],
-                    design_notes=entity["design_notes"]
+                    design_notes=entity["design_notes"],
+                    guide=entity["guide"]
                 )
             )
         return response

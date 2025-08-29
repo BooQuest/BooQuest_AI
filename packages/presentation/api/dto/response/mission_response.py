@@ -8,3 +8,4 @@ class MissionResponse(BaseModel):
     title: str
     order: int
     design_notes: str
+    guide: str

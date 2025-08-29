@@ -21,6 +21,7 @@ class MissionAIResponse(BaseModel):
     title: str = Field(..., description="미션 제목")
     orderNo: int = Field(..., description="미션 순서 번호")
     notes: str = Field(..., description="미션 노트")
+    guide: str = Field(..., description="미션 가이드")
 
 
 class MissionsAIResponse(BaseModel):
