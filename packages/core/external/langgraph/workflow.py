@@ -30,6 +30,7 @@ class LangGraphWorkflowService:
         self.side_job_workflow = self._build_side_job_workflow()
         self.regenerate_side_job_workflow = self._build_regenerate_side_job_workflow()
         self.regenerate_all_side_jobs_workflow = self._build_regenerate_all_side_job_workflow()
+        self.regenerate_mission_steps_workflow = self._build_regenerate_mission_step_workflow()
         
         self.logger.info("LangGraph 워크플로우 서비스 초기화 완료")
 
@@ -143,6 +144,28 @@ class LangGraphWorkflowService:
 
         sg.set_entry_point(generation_node.name)
         return sg.compile()
+    
+
+    def _build_regenerate_mission_step_workflow(self):
+        """부퀘스트 재생성 워크플로우를 구축합니다."""
+        from packages.infrastructure.nodes.states.langgraph_state import MissionStepState
+        
+        sg = StateGraph(MissionStepState)
+        
+        # AI 생성 노드
+        generation_node = MissionStepGenerationNode()
+        sg.add_node(generation_node.name, generation_node)
+        
+        # 저장 노드
+        save_node = SaveMissionStepNode(self.uow_factory, MissionStep)
+        sg.add_node(save_node.name, save_node.save_mission_steps)
+        
+        # 엣지 연결
+        sg.add_edge(generation_node.name, save_node.name)
+        sg.add_edge(save_node.name, END)
+        
+        sg.set_entry_point(generation_node.name)
+        return sg.compile()
 
     async def generate_missions(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """미션을 생성합니다."""
@@ -230,4 +253,22 @@ class LangGraphWorkflowService:
             return result.get("saved_entities", [])[0]
         except Exception as e:
             self.logger.error(f"사이드잡 재생성 실패: {e}")
+            raise
+
+    async def regenerate_mission_steps(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """부퀘스트 전체 재생성."""
+        try:
+            generate_request = request_data.get("mission_step_generate_request", {})
+            feedback_data = request_data.get("feedback_data", {}) 
+
+            initial_state = self._create_initial_state(
+                generate_request=generate_request,
+                feedback_data=feedback_data,  
+                mission_id=generate_request.get("mission_id")
+            )
+
+            result = await self.regenerate_mission_steps_workflow.ainvoke(initial_state)
+            return result.get("saved_entities", [])
+        except Exception as e:
+            self.logger.error(f"사이드잡 전체 재생성 실패: {e}")
             raise
