@@ -14,6 +14,7 @@ from packages.infrastructure.nodes.generation.side_job_generation_node import Si
 from packages.infrastructure.nodes.save.save_mission_node import SaveMissionNode
 from packages.infrastructure.nodes.save.save_mission_step_node import SaveMissionStepNode
 from packages.infrastructure.nodes.save.save_side_job_node import SaveSideJobNode
+from packages.infrastructure.nodes.generation.mission_step_regeneration_node import MissionStepRegenerationNode
 
 
 class LangGraphWorkflowService:
@@ -65,9 +66,9 @@ class LangGraphWorkflowService:
 
     def _build_mission_step_workflow(self):
         """미션 단계 생성 워크플로우를 구축합니다."""
-        from packages.infrastructure.nodes.states.langgraph_state import MissionStepState
+        from packages.infrastructure.nodes.states.langgraph_state import RegenerateMissionStepState
         
-        sg = StateGraph(MissionStepState)
+        sg = StateGraph(RegenerateMissionStepState)
         
         # AI 생성 노드
         generation_node = MissionStepGenerationNode()
@@ -148,12 +149,12 @@ class LangGraphWorkflowService:
 
     def _build_regenerate_mission_step_workflow(self):
         """부퀘스트 재생성 워크플로우를 구축합니다."""
-        from packages.infrastructure.nodes.states.langgraph_state import MissionStepState
+        from packages.infrastructure.nodes.states.langgraph_state import RegenerateMissionStepState
         
-        sg = StateGraph(MissionStepState)
+        sg = StateGraph(RegenerateMissionStepState)
         
         # AI 생성 노드
-        generation_node = MissionStepGenerationNode()
+        generation_node = MissionStepRegenerationNode()
         sg.add_node(generation_node.name, generation_node)
         
         # 저장 노드
@@ -262,13 +263,14 @@ class LangGraphWorkflowService:
             feedback_data = request_data.get("feedback_data", {}) 
 
             initial_state = self._create_initial_state(
-                generate_request=generate_request,
-                feedback_data=feedback_data,  
+                request_data=generate_request,
+                reasons=feedback_data.get("reasons", []),
+                etc_feedback=feedback_data.get("etc_feedback", ""),
                 mission_id=generate_request.get("mission_id")
             )
 
             result = await self.regenerate_mission_steps_workflow.ainvoke(initial_state)
             return result.get("saved_entities", [])
         except Exception as e:
-            self.logger.error(f"사이드잡 전체 재생성 실패: {e}")
+            self.logger.error(f"부퀘스트 전체 재생성 실패: {e}")
             raise
