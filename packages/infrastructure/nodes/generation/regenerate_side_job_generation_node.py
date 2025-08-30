@@ -61,13 +61,21 @@ class RegenerateSideJobGenerationNode(BaseGenerationNode[SideJobState]):
     def _prepare_prompt_data(self, state: SideJobState) -> Dict[str, Union[str, List[str]]]:
         """프롬프트 데이터 준비."""
         profile_data = self._safe_get(state, "profile_data", {})
+
+        expression_style = profile_data.get("expression_style", "")
+
+        # 표현방식별 부업 리스트 가져오기
+        expression_jobs = self.prompt_templates.platform_loader.get_expression_side_jobs(expression_style)
+        platform_list = expression_jobs.get(expression_style.upper(), [])  # 대소문자 안정성 확보
+        platform_names = ", ".join(platform_list)
         
         # 기본 프로필 데이터
         prompt_data = {
             "job": profile_data.get("job", ""),
             "hobbies": ", ".join(profile_data.get("hobbies", [])),
-            "expression_style": profile_data.get("expression_style", ""),
-            "strength_type": profile_data.get("strength_type", "")
+            "expression_style": expression_style,
+            "strength_type": profile_data.get("strength_type", ""),
+            "platform_names": platform_names
         }
         
         # 피드백 데이터 추가 (안전하게 처리)
