@@ -176,6 +176,7 @@ class LangGraphWorkflowService:
                 user_id=request_data.get("user_id"),
                 sidejob_id=request_data.get("side_job_id")
             )
+
             result = await self.mission_workflow.ainvoke(initial_state)
             return result.get("saved_entities", [])
         except Exception as e:

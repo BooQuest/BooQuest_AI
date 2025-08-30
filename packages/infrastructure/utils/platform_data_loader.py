@@ -19,10 +19,14 @@ class PlatformDataLoader:
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.platform_path = os.path.join(self.base_dir, "platform_side_jobs.json")
         self.sns_path = os.path.join(self.base_dir, "sns_side_jobs.json")
-        
+        self.expression_path = os.path.join(self.base_dir, "expression_side_jobs.json")
+        self.mission_path = os.path.join(self.base_dir, "expression_platform_main_quest.json")
+
         # 데이터 로드
         self.platform_data = self._load_json_file(self.platform_path)
         self.sns_data = self._load_json_file(self.sns_path)
+        self.expression_data = self._load_json_file(self.expression_path)
+        self.mission_data = self._load_json_file(self.mission_path)
         
         # 플랫폼 이름 목록 생성
         self.all_platform_names = self._generate_platform_names()
@@ -117,7 +121,31 @@ class PlatformDataLoader:
         if format_type:
             return formats.get(format_type, [])
         return [fmt for fmt_list in formats.values() for fmt in fmt_list]
+    
+    def get_expression_side_jobs(self, expression_type: str = None) -> Dict[str, List[str]]:
+        """표현 방식(TEXT, IMAGE, VIDEO)에 따른 부업 리스트를 반환합니다."""
+        if not self.expression_data:
+            self.logger.warning("expression_side_jobs.json 데이터가 비어 있습니다.")
+            return {}
 
+        if expression_type:
+            result = self.expression_data.get(expression_type.upper(), [])
+            if not result:
+                self.logger.warning(f"해당 표현 방식에 대한 데이터가 없습니다: {expression_type}")
+            return {expression_type.upper(): result}
+
+        return self.expression_data
+    
+    def get_expression_missions(self, expression_type: str = None) -> Dict[str, List[str]]:
+        """
+        표현 방식(TEXT, IMAGE, VIDEO)에 따른 메인 퀘스트 단계(step) 리스트 전체를 반환합니다.
+        """
+        if not self.mission_data:
+            self.logger.warning("expression_platform_main_quest.json 데이터가 비어 있습니다.")
+            return {}
+
+        # 표현 방식에 상관없이 전체 반환
+        return {k: v["steps"] for k, v in self.mission_data.items()}
 
 # 싱글톤 인스턴스
 platform_loader = PlatformDataLoader()

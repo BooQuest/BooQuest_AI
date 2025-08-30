@@ -39,7 +39,6 @@ class MissionGenerationNode(BaseGenerationNode[MissionState]):
         try:
             # 프롬프트 데이터 준비
             prompt_data = self._prepare_prompt_data(state)
-            
             # 프롬프트 생성
             prompt = self.prompt_templates.create_prompt_template()
             
@@ -61,8 +60,17 @@ class MissionGenerationNode(BaseGenerationNode[MissionState]):
     def _prepare_prompt_data(self, state: MissionState) -> Dict[str, Union[str, List[str]]]:
         """프롬프트 데이터 준비."""
         request_data = self._safe_get(state, "request_data", {})
-        
-        return {
-            "side_job_title": request_data.get("side_job_title", "사이드잡 제목"),
-            "side_job_description": request_data.get("side_job_description", "사이드잡 설명")
+        # 표현 방식 단계 정보 추가
+        expression_steps = self.prompt_templates.platform_loader.get_expression_missions()
+
+         # 기본 템플릿
+        prompt_data = {
+            "side_job_title": request_data.get("sidejob_title", "사이드잡 제목"),
+            "side_job_description": request_data.get("sidejob_design_notes", "사이드잡 설명"),
+            "expression_type_steps": expression_steps
         }
+
+
+
+        return prompt_data
+    

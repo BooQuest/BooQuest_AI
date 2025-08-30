@@ -42,7 +42,8 @@ class SideJobGenerationNode(BaseGenerationNode[SideJobState]):
             
             # 프롬프트 생성
             prompt = self.prompt_templates.create_prompt_template()
-            
+            self.logger.info(f"프롬프트: {prompt.format(**prompt_data)}")
+
             # Chain 구성 및 실행
             chain = prompt | self.llm
             result = chain.invoke(prompt_data)
@@ -61,14 +62,17 @@ class SideJobGenerationNode(BaseGenerationNode[SideJobState]):
     def _prepare_prompt_data(self, state: SideJobState) -> Dict[str, Union[str, List[str]]]:
         """프롬프트 데이터 준비."""
         profile_data = self._safe_get(state, "profile_data", {})
-        
+        expression_style = profile_data.get("expression_style", "")
         # 플랫폼 데이터 로더에서 데이터 가져오기
-        platform_names = ", ".join(self.prompt_templates.platform_loader.get_platform_names())
-        
+        expression_jobs = self.prompt_templates.platform_loader.get_expression_side_jobs(expression_style)
+        platform_list = expression_jobs.get(expression_style.upper(), [])  # ← 중요
+
+        platform_names = ", ".join(platform_list)
+
         return {
             "job": profile_data.get("job", ""),
             "hobbies": ", ".join(profile_data.get("hobbies", [])),
-            "expression_style": profile_data.get("expression_style", ""),
+            "expression_style": expression_style,
             "strength_type": profile_data.get("strength_type", ""),
             "platform_names": platform_names
         }
