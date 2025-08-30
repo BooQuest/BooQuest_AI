@@ -68,7 +68,7 @@ class SideJobGenerationNode(BaseGenerationNode[SideJobState]):
         platform_list = expression_jobs.get(expression_style.upper(), [])  # ← 중요
 
         platform_names = ", ".join(platform_list)
-        self.logger.info(f"[✅ platform_names]: {platform_names}")
+
         return {
             "job": profile_data.get("job", ""),
             "hobbies": ", ".join(profile_data.get("hobbies", [])),
