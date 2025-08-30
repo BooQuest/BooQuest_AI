@@ -13,6 +13,7 @@ from packages.presentation.api.dto.request.mission_step_generate_request import 
 from packages.presentation.api.dto.response.side_job_response import SideJobResponse
 from packages.presentation.api.dto.response.mission_response import MissionResponse
 from packages.presentation.api.dto.response.mission_step_response import MissionStepResponse
+from packages.presentation.api.dto.request.regenerate_mission_steps_request import RegenerateMissionStepsRequest
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -149,6 +150,29 @@ async def side_jobs_regenerate(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"사이드잡 재생성 실패: {str(e)}")
 
+@router.post("/regenerate-mission-step", response_model=List[MissionStepResponse])
+@inject
+async def side_jobs_generate_all(
+    request: RegenerateMissionStepsRequest,
+    service: LangGraphWorkflowService = Depends(Provide[Container.langgraph_workflow])
+):
+    """사이드잡을 생성하고 저장합니다."""
+    try:
+        # AI 생성 및 저장
+        saved_entities = await service.regenerate_mission_steps(request.model_dump())
+        
+        # API 응답 DTO로 변환
+        return [
+            MissionStepResponse(
+                id=entity["id"],
+                seq=entity["seq"],
+                title=entity["title"],
+                detail=entity["detail"]
+            )
+            for entity in saved_entities
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"부퀘스트 재생성 실패: {str(e)}")
 
 # 상태 확인용 라우터
 status_router = APIRouter(prefix="/status", tags=["Status"])

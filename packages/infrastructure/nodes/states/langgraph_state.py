@@ -32,6 +32,12 @@ class MissionStepState(BaseState):
     request_data: Dict[str, Any]  # 입력 데이터
     mission_id: Optional[int]      # 미션 단계 생성에만 필요한 필드
 
+class RegenerateMissionStepState(BaseState):
+    """미션 단계 재생성 상태."""
+    request_data: Dict[str, Any]  # 입력 데이터
+    mission_id: Optional[int]      # 미션 단계 생성에만 필요한 필드
+    reasons: Optional[List[str]]  # 재생성 사유 리스트
+    etc_feedback: Optional[str]  # 기타 피드백
 
 # Union 타입으로 모든 상태를 표현
 LangGraphState = Union[SideJobState, MissionState, MissionStepState]
