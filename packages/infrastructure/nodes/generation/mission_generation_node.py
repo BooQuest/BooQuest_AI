@@ -22,7 +22,7 @@ class MissionGenerationNode(BaseGenerationNode[MissionState]):
             base_url=self.settings.clova_x_base_url,
             model=self.settings.clova_x_model,
             temperature=0.7,
-            max_tokens=1024,  # Set max tokens larger than 1024 to use tool calling
+            max_tokens=2048, 
             thinking={
                 "effort": "none"  # Set to "none" to disable thinking, as structured outputs are incompatible with thinking
             },

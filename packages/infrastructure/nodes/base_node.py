@@ -1,10 +1,10 @@
 """공통 노드 베이스 클래스 - 중복 제거 및 API 응답 최적화."""
 
 from abc import ABC, abstractmethod
+from contextlib import AbstractContextManager
 from typing import Dict, List, TypeVar, Generic, Union, Optional
 from sqlalchemy import insert, update, Table
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import insert
 from packages.infrastructure.logging import get_logger
 from packages.infrastructure.nodes.states.langgraph_state import LangGraphState
 
@@ -63,6 +63,8 @@ class BaseSaveNode(BaseNode[T]):
                 return self._update_state(state, {"saved_entities": []})
             
             with self.uow_factory() as uow:
+                uow : AbstractContextManager
+
                 saved_entities = self._process_entities(uow, entities, state)
                 
                 # 저장 후 후처리 훅 실행 (같은 트랜잭션에서)
@@ -94,15 +96,14 @@ class BaseSaveNode(BaseNode[T]):
             self.logger.error(f"{entity_key} 저장 실패: {e}")
             raise
     
-    def _process_entities(self, uow: Session, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
+    def _process_entities(self, uow: AbstractContextManager, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
         """엔티티 처리 (INSERT/UPDATE)."""
         if not entities:
             return []
         
-
         return self._insert_entities(uow, entities, state)
     
-    def _insert_entities(self, uow: Session, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
+    def _insert_entities(self, uow: AbstractContextManager, entities: List[Dict[str, Union[int, str, bool]]], state: T) -> List[Dict[str, Union[int, str, bool]]]:
         """엔티티 삽입."""
         insert_data = [self._prepare_data(entity, state) for entity in entities]
         stmt = insert(self.table).values(insert_data).returning(self.table.c.id)
