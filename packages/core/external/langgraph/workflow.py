@@ -66,9 +66,9 @@ class LangGraphWorkflowService:
 
     def _build_mission_step_workflow(self):
         """미션 단계 생성 워크플로우를 구축합니다."""
-        from packages.infrastructure.nodes.states.langgraph_state import RegenerateMissionStepState
+        from packages.infrastructure.nodes.states.langgraph_state import MissionStepState
         
-        sg = StateGraph(RegenerateMissionStepState)
+        sg = StateGraph(MissionStepState)
         
         # AI 생성 노드
         generation_node = MissionStepGenerationNode()

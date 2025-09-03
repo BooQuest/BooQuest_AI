@@ -15,7 +15,6 @@ class MissionStepGenerationNode(BaseGenerationNode[MissionStepState]):
     def __init__(self):
         super().__init__("generate_mission_steps")
         self.settings = get_settings()
-        
         # LLM 설정
         self.llm = ChatClovaX(
             api_key=self.settings.clova_x_api_key,
@@ -61,5 +60,8 @@ class MissionStepGenerationNode(BaseGenerationNode[MissionStepState]):
         
         return {
             "mission_title": request_data.get("mission_title", "미션 제목"),
-            "mission_description": request_data.get("mission_description", "미션 설명")
+            "mission_description": request_data.get("mission_description", "미션 설명"),
+            "order_no": request_data.get("order_no", "0"),
+            "side_job_title": request_data.get("side_job_title", "사이드잡 제목"),
+            "side_job_description": request_data.get("side_job_description", "사이드잡 설명")
         }
