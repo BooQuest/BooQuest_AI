@@ -153,7 +153,7 @@ async def side_jobs_regenerate(
 
 @router.post("/regenerate-mission-step", response_model=List[MissionStepResponse])
 @inject
-async def side_jobs_generate_all(
+async def regenerate_mission_Steps(
     request: RegenerateMissionStepsRequest,
     service: LangGraphWorkflowService = Depends(Provide[Container.langgraph_workflow])
 ):
