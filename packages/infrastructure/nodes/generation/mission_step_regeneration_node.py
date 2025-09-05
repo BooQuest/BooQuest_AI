@@ -5,7 +5,6 @@ from packages.infrastructure.config.config import get_settings
 from packages.infrastructure.nodes.base_node import BaseGenerationNode
 from packages.infrastructure.prompts.mission_step_regenerate_prompts import MissionStepRegeneratePrompts
 from packages.presentation.api.dto.response.ai_response_models import MissionStepsAIResponse
-from packages.infrastructure.nodes.states.langgraph_state import MissionStepState
 from langchain_naver import ChatClovaX
 from packages.infrastructure.nodes.states.langgraph_state import RegenerateMissionStepState
 
@@ -64,5 +63,8 @@ class MissionStepRegenerationNode(BaseGenerationNode[RegenerateMissionStepState]
             "mission_title": request_data.get("mission_title", "미션 제목"),
             "mission_description": request_data.get("mission_design_notes", "미션 설명"),
             "feedback_reasons": ", ".join(state.get("reasons") or []),
-            "etc_feedback": state.get("etc_feedback", "")
+            "etc_feedback": state.get("etc_feedback", ""),
+            "order_no": request_data.get("order_no", "0"),
+            "side_job_title": request_data.get("side_job_title", "사이드잡 제목"),
+            "side_job_description": request_data.get("side_job_description", "사이드잡 설명")
         }

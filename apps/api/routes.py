@@ -83,6 +83,7 @@ async def mission_steps_generate(
 ):
     """미션 단계를 생성하고 저장합니다."""
     try:
+        print("Request Data:", request.model_dump())
         # AI 생성 및 저장
         saved_entities = await service.generate_mission_steps(request.model_dump())
         
@@ -152,7 +153,7 @@ async def side_jobs_regenerate(
 
 @router.post("/regenerate-mission-step", response_model=List[MissionStepResponse])
 @inject
-async def side_jobs_generate_all(
+async def regenerate_mission_Steps(
     request: RegenerateMissionStepsRequest,
     service: LangGraphWorkflowService = Depends(Provide[Container.langgraph_workflow])
 ):
