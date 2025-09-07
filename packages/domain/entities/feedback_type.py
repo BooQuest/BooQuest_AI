@@ -7,11 +7,9 @@ class FeedbackType(str, Enum):
     """피드백 타입들."""
     
     LOW_PROFITABILITY = "LOW_PROFITABILITY"
-    NO_INTEREST = "NO_INTEREST"
-    NOT_MY_STYLE = "NOT_MY_STYLE"
-    TAKES_TOO_MUCH_TIME = "TAKES_TOO_MUCH_TIME"
-    NOT_FEASIBLE = "NOT_FEASIBLE"
-    TOO_EXPENSIVE = "TOO_EXPENSIVE"
+    NOT_INTERESTING = "NOT_INTERESTING"
+    TOO_TIME_CONSUMING = "TOO_TIME_CONSUMING"
+    CHANGE_TO_OTHER = "CHANGE_TO_OTHER"
     NONE = "NONE"
     
     @property
@@ -19,11 +17,9 @@ class FeedbackType(str, Enum):
         """한국어 라벨을 반환합니다."""
         labels = {
             "LOW_PROFITABILITY": "수익성이 낮아보여요",
-            "NO_INTEREST": "흥미가 생기지 않아요",
-            "NOT_MY_STYLE": "성향과 맞지 않아요",
-            "TAKES_TOO_MUCH_TIME": "시간이 너무 많이 필요해요",
-            "NOT_FEASIBLE": "할 수 있는 일이 아니에요",
-            "TOO_EXPENSIVE": "초기 비용이 부담돼요",
+            "NOT_INTERESTING": "플랫폼이 마음에 들지 않아요",
+            "TOO_TIME_CONSUMING": "시간이 너무 많이 들어요",
+            "CHANGE_TO_OTHER": "다른걸로 바꿔주세요",
             "NONE": "없음"
         }
         return labels.get(self.value, self.value)
