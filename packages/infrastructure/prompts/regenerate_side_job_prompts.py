@@ -58,12 +58,7 @@ class RegenerateSideJobPrompts:
 
 반드시 아래와 같은 형식으로만 응답하세요:
 괄호 안의 형식을 지켜서 만들어주세요.
-{{
-  "side_jobs":
-    {{"title": "부업 아이디어 제목 ([분위기] + [주제] + [형식] + [플랫폼] 형태)", "description": "어떤 활동을 어떤 방식으로 하는 사람인지 요약"}}
-}}
-
-위 형식에 맞춰 **JSON만** 출력하세요."""
+"""
 
         return ChatPromptTemplate.from_messages([
             ("system", system_prompt),
