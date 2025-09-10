@@ -16,12 +16,17 @@ class SideJobsAIResponse(BaseModel):
     prompt_meta: str = Field(default="", description="프롬프트 메타데이터")
 
 
+class GuideAiResponse(BaseModel):
+    """AI가 생성하는 미션 가이드"""
+    guide_title:str = Field(..., description="가이드 제목")
+    description:str = Field(..., description="가이드 상세 설명")
+    
 class MissionAIResponse(BaseModel):
     """AI가 생성하는 미션 응답 모델."""
     title: str = Field(..., description="미션 제목")
     orderNo: int = Field(..., description="미션 순서 번호")
     notes: str = Field(..., description="미션 노트")
-    guide: str = Field(..., description="미션 가이드")
+    guide: List[GuideAiResponse] = Field(..., description="미션 가이드")
 
 
 class MissionsAIResponse(BaseModel):
