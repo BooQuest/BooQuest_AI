@@ -3,9 +3,9 @@ services:
     image: pgvector/pgvector:pg17
     container_name: postgres_with_pgvector
     environment:
-      POSTGRES_DB: ai_project
+      POSTGRES_DB: booquest
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD: Rlarldnd1!
     ports:
       - "5432:5432"
     volumes:
