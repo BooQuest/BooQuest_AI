@@ -1,4 +1,21 @@
 services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: postgres_with_pgvector
+    environment:
+      POSTGRES_DB: ai_project
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   valkey:
     image: valkey/valkey:latest
     container_name: valkey
@@ -28,6 +45,8 @@ services:
     environment:
       - PYTHONPATH=/app
     depends_on:
+      postgres:
+        condition: service_healthy
       valkey:
         condition: service_healthy
     ports:
@@ -43,16 +62,39 @@ services:
     command: >
       celery -A packages.presentation.worker.celery_app.celery_app
       worker -l info
-      -Q ai
+      -Q ai,trends
     volumes:
       - .:/app
     env_file: config/.env  
     environment:
       - PYTHONPATH=/app
     depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    container_name: ai_celery_beat
+    command: >
+      celery -A packages.presentation.worker.celery_app.celery_app
+      beat -l info
+    volumes:
+      - .:/app
+    env_file: config/.env  
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      postgres:
+        condition: service_healthy
       valkey:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
+  postgres_data:
   valkey_data:
