@@ -46,6 +46,19 @@ class Settings(BaseSettings):
     celery_soft_time_limit: int 
     celery_worker_concurrency: int
     celery_prefetch_multiplier: int
+    
+    # Vector 및 임베딩 설정
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"  # 기본 임베딩 모델
+    embedding_dimension: int = 384  # 벡터 차원
+    vector_similarity_threshold: float = 0.7  # 유사도 임계값
+    
+    # 크롤링 설정
+    crawling_user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    crawling_delay_min: int = 1  # 크롤링 간 최소 지연 시간 (초)
+    crawling_delay_max: int = 3  # 크롤링 간 최대 지연 시간 (초)
+    crawling_timeout: int = 30  # 크롤링 타임아웃 (초)
+    
+    # RSS 크롤링 설정 (News API 제거됨)
 
     
     class Config:
