@@ -1,0 +1,128 @@
+name: CI/CD (prod)
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: cicd-prod-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_API:    booquest-prod-ai-api
+  IMAGE_WORKER: booquest-prod-ai-worker
+  API_CTN:      booquest-ai
+  WORKER_CTN:   booquest-ai-worker
+  APP_PORT: "8081"
+  DEPLOY_TAG: latest
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: |
+          docker build \
+            -f docker/api.Dockerfile \
+            -t "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_API }}:${{ env.DEPLOY_TAG }}" \
+            -t "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_API }}:${GITHUB_SHA::7}" \
+            .
+
+      - name: Build Worker image
+        run: |
+          docker build \
+            -f docker/worker.Dockerfile \
+            -t "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_WORKER }}:${{ env.DEPLOY_TAG }}" \
+            -t "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_WORKER }}:${GITHUB_SHA::7}" \
+            .
+
+      - name: Login to NCP registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD_PROD }}" | docker login "${{ secrets.REGISTRY_URL_PROD }}" \
+            -u "${{ secrets.REGISTRY_USERNAME_PROD }}" --password-stdin
+
+      - name: Push images
+        run: |
+          docker push "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_API }}:${GITHUB_SHA::7}"
+          docker push "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_API }}:${{ env.DEPLOY_TAG }}"
+          docker push "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_WORKER }}:${GITHUB_SHA::7}"
+          docker push "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_WORKER }}:${{ env.DEPLOY_TAG }}"
+
+      - name: Logout
+        if: always()
+        run: docker logout "${{ secrets.REGISTRY_URL_PROD }}" || true
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy on VM via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST_PROD_AI }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_PROD }}
+          script: |
+            set -euo pipefail
+            
+            REG="${{ secrets.REGISTRY_URL_PROD }}"
+            IMG_API="$REG/${{ env.IMAGE_API }}:${{ env.DEPLOY_TAG }}"
+            IMG_WORKER="$REG/${{ env.IMAGE_WORKER }}:${{ env.DEPLOY_TAG }}"
+            API_CTN="${{ env.API_CTN }}"
+            WORKER_CTN="${{ env.WORKER_CTN }}"
+            APP_PORT="${{ env.APP_PORT }}"
+            CONFIG_PATH="/opt/booquest-ai/config"
+
+            # 1) 레지스트리 로그인
+            echo "${{ secrets.REGISTRY_PASSWORD_PROD }}" | docker login "$REG" \
+              -u "${{ secrets.REGISTRY_USERNAME_PROD }}" --password-stdin
+
+            
+            # 2) 공용 네트워크 확보
+            docker network create booquest-net 2>/dev/null || true
+
+            # 3) Valkey 컨테이너 없으면 생성(있으면 건너뜀)
+            if ! docker ps -a --format '{{.Names}}' | grep -q '^valkey$'; then
+              docker run -d \
+                --name valkey \
+                --restart unless-stopped \
+                --network booquest-net \
+                --network-alias valkey \
+                -v valkey_data:/data \
+                -p 6379:6379 \
+                valkey/valkey:latest
+            fi
+
+            # 4) 이미지 pull
+            docker pull "$IMG_API"
+            docker pull "$IMG_WORKER"
+
+            # 5) 이전 컨테이너 정리
+            docker rm -f "$API_CTN" "$WORKER_CTN" 2>/dev/null || true
+
+            # 6) API 컨테이너
+            docker run -d \
+              --name "$API_CTN" \
+              --restart unless-stopped \
+              --network booquest-net \
+              --network-alias booquest-ai \
+              -v "$CONFIG_PATH":/app/config:ro \
+              -e PYTHONPATH=/app \
+              -p "${APP_PORT}:8081" \
+              "$IMG_API"
+
+            # 7) Worker 컨테이너
+            docker run -d \
+              --name "$WORKER_CTN" \
+              --restart unless-stopped \
+              --network booquest-net \
+              --network-alias booquest-ai-worker \
+              -v "$CONFIG_PATH":/app/config:ro \
+              -e PYTHONPATH=/app \
+              "$IMG_WORKER"
+
+            # 8) 이미지 청소
+            docker image prune -f || true
