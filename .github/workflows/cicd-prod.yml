@@ -111,7 +111,6 @@ jobs:
               --network-alias booquest-ai \
               -v "$CONFIG_PATH":/app/config:ro \
               -e PYTHONPATH=/app \
-              -p "${APP_PORT}:8081" \
               "$IMG_API"
 
             # 7) Worker 컨테이너
