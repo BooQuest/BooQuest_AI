@@ -15,6 +15,7 @@ from packages.infrastructure.nodes.save.save_mission_node import SaveMissionNode
 from packages.infrastructure.nodes.save.save_mission_step_node import SaveMissionStepNode
 from packages.infrastructure.nodes.save.save_side_job_node import SaveSideJobNode
 from packages.infrastructure.nodes.generation.mission_step_regeneration_node import MissionStepRegenerationNode
+from packages.infrastructure.nodes.generation.chat_generation_node import ChatGenerationNode
 
 
 class LangGraphWorkflowService:
@@ -32,6 +33,7 @@ class LangGraphWorkflowService:
         self.regenerate_side_job_workflow = self._build_regenerate_side_job_workflow()
         self.regenerate_all_side_jobs_workflow = self._build_regenerate_all_side_job_workflow()
         self.regenerate_mission_steps_workflow = self._build_regenerate_mission_step_workflow()
+        self.chat_workflow = self._build_chat_workflow()
         
         self.logger.info("LangGraph 워크플로우 서비스 초기화 완료")
 
@@ -168,6 +170,19 @@ class LangGraphWorkflowService:
         sg.set_entry_point(generation_node.name)
         return sg.compile()
 
+    def _build_chat_workflow(self):
+        """부업 가이드 챗봇 워크플로우를 구축합니다."""
+        from packages.infrastructure.nodes.states.langgraph_state import ChatState
+        
+        sg = StateGraph(ChatState)
+        
+        generation_node = ChatGenerationNode()
+        sg.add_node(generation_node.name, generation_node)
+        
+        sg.add_edge(generation_node.name, END)
+        sg.set_entry_point(generation_node.name)
+        return sg.compile()
+
     async def generate_missions(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """미션을 생성합니다."""
         try:
@@ -274,4 +289,17 @@ class LangGraphWorkflowService:
             return result.get("saved_entities", [])
         except Exception as e:
             self.logger.error(f"부퀘스트 전체 재생성 실패: {e}")
+            raise
+
+    async def chat(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """챗봇 응답을 생성합니다."""
+        try:
+            initial_state = self._create_initial_state(
+                request_data=request_data,
+                user_id=request_data.get("user_id"),
+            )
+            result = await self.chat_workflow.ainvoke(initial_state)
+            return result.get("ai_result", {})
+        except Exception as e:
+            self.logger.error(f"챗봇 응답 생성 실패: {e}")
             raise
