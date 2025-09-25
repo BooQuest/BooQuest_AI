@@ -52,7 +52,7 @@ class ChatGenerationNode(BaseGenerationNode[ChatState]):
             history_text = str(history)
 
         prompt_data = {
-#             "history": history_text,
+            "history": history_text,
             "message": request_data.get("message", "")
         }
         return prompt_data
