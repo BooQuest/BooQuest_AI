@@ -3,5 +3,12 @@
 from pydantic import BaseModel, Field
 
 
+class ChatUsage(BaseModel):
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    model: str | None = None
+
 class ChatResponse(BaseModel):
-    message: str = Field(..., description="챗봇 응답 메시지")
+    message: str
+    usage: ChatUsage | None = None
