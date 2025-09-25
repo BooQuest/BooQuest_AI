@@ -20,7 +20,7 @@ class ChatGenerationNode(BaseGenerationNode[ChatState]):
             base_url=self.settings.clova_x_base_url,
             model=self.settings.clova_x_model,
             temperature=0.5,
-            max_tokens=1024,
+            max_tokens=512,
             thinking={"effort": "none"},
         )
 
