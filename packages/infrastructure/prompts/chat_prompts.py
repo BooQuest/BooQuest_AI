@@ -18,7 +18,7 @@ class ChatPrompts:
         user_prompt = (
             "대화 이력: {history}\n"
             "사용자 메시지: {message}\n\n"
-            "요청: 위 맥락을 반영해 사용자의 질문에 답하세요.\n"
+            "요청: 위 맥락을 반영해 사용자의 질문에 1단계에서 3단계 사이로 답하세요.\n"
         )
 
         return ChatPromptTemplate.from_messages([
