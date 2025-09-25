@@ -10,7 +10,7 @@ class ChatClassifyNode:
         self.logger = get_logger(__name__)
 
     async def __call__(self, state):
-        q = state.request_data.get("query","")
+        q = state.request_data.get("message","")
         system = (
             "당신은 라우터입니다. 질문이 '부업/사이드잡, 미션, 부퀘스트, 사진/광고 인증, 보상/경험치, 앱 사용법'에 관한지 판별하세요. "
             "관련이면 is_relevant=true, intent를 위 범주 중 하나로 지정. 확신도 0~1로 표시. JSON만."
