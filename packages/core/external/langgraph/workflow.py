@@ -15,6 +15,8 @@ from packages.infrastructure.nodes.save.save_mission_node import SaveMissionNode
 from packages.infrastructure.nodes.save.save_mission_step_node import SaveMissionStepNode
 from packages.infrastructure.nodes.save.save_side_job_node import SaveSideJobNode
 from packages.infrastructure.nodes.generation.mission_step_regeneration_node import MissionStepRegenerationNode
+from packages.infrastructure.nodes.generation.chat_generation_node import ChatGenerationNode
+from packages.infrastructure.nodes.generation.chat_classify_node import ChatClassifyNode
 
 
 class LangGraphWorkflowService:
@@ -32,6 +34,7 @@ class LangGraphWorkflowService:
         self.regenerate_side_job_workflow = self._build_regenerate_side_job_workflow()
         self.regenerate_all_side_jobs_workflow = self._build_regenerate_all_side_job_workflow()
         self.regenerate_mission_steps_workflow = self._build_regenerate_mission_step_workflow()
+        self.chat_workflow = self._build_chat_workflow()
         
         self.logger.info("LangGraph 워크플로우 서비스 초기화 완료")
 
@@ -168,6 +171,59 @@ class LangGraphWorkflowService:
         sg.set_entry_point(generation_node.name)
         return sg.compile()
 
+    def _build_chat_workflow(self):
+        """부업 가이드 챗봇 워크플로우를 구축합니다."""
+        from packages.infrastructure.nodes.states.langgraph_state import ChatState
+
+        sg = StateGraph(ChatState)
+
+        generation_node = ChatGenerationNode()
+#         classify_node = ChatClassifyNode(generation_node.llm)
+
+        def _get_state_value(state: ChatState, key: str, default=None):
+            if isinstance(state, dict):
+                return state.get(key, default)
+            return getattr(state, key, default)
+
+        def _update_state(state: ChatState, updates):
+            if isinstance(state, dict):
+                new_state = dict(state)
+                new_state.update(updates)
+                return new_state
+            for k, v in updates.items():
+                setattr(state, k, v)
+            return state
+
+        def _route_chat(state: ChatState) -> str:
+            is_relevant = _get_state_value(state, "is_relevant", False)
+            return "generate" if is_relevant else "irrelevant"
+
+        def _handle_irrelevant(state: ChatState) -> ChatState:
+            payload = {
+                "message": "부업과 관련된 질문을 해주세요."
+            }
+            return _update_state(state, {"ai_result": payload})
+
+#         sg.add_node(classify_node.name, classify_node)
+        sg.add_node(generation_node.name, generation_node)
+#         sg.add_node("chat_request_related", _handle_irrelevant)
+
+#         sg.add_conditional_edges(
+#             classify_node.name,
+#             _route_chat,
+#             {
+#                 "generate": generation_node.name,
+#                 "irrelevant": "chat_request_related",
+#             },
+#         )
+
+        sg.add_edge(generation_node.name, END)
+#         sg.add_edge("chat_request_related", END)
+
+#         sg.set_entry_point(classify_node.name)
+        sg.set_entry_point(generation_node.name)
+        return sg.compile()
+
     async def generate_missions(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """미션을 생성합니다."""
         try:
@@ -274,4 +330,17 @@ class LangGraphWorkflowService:
             return result.get("saved_entities", [])
         except Exception as e:
             self.logger.error(f"부퀘스트 전체 재생성 실패: {e}")
+            raise
+
+    async def chat(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """챗봇 응답을 생성합니다."""
+        try:
+            initial_state = self._create_initial_state(
+                request_data=request_data,
+                user_id=request_data.get("user_id"),
+            )
+            result = await self.chat_workflow.ainvoke(initial_state)
+            return result.get("ai_result", {})
+        except Exception as e:
+            self.logger.error(f"챗봇 응답 생성 실패: {e}")
             raise

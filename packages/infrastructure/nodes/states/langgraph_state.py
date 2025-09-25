@@ -39,5 +39,9 @@ class RegenerateMissionStepState(BaseState):
     reasons: Optional[List[str]]  # 재생성 사유 리스트
     etc_feedback: Optional[str]  # 기타 피드백
 
+class ChatState(BaseState):
+    """채팅 상태 (부업 가이드 챗봇)."""
+    request_data: Dict[str, Any]  # 입력 데이터 (message, history 등)
+
 # Union 타입으로 모든 상태를 표현
 LangGraphState = Union[SideJobState, MissionState, MissionStepState]

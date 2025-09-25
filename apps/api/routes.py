@@ -14,6 +14,8 @@ from packages.presentation.api.dto.response.side_job_response import SideJobResp
 from packages.presentation.api.dto.response.mission_response import MissionResponse
 from packages.presentation.api.dto.response.mission_step_response import MissionStepResponse
 from packages.presentation.api.dto.request.regenerate_mission_steps_request import RegenerateMissionStepsRequest
+from packages.presentation.api.dto.request.chat_request import ChatRequest
+from packages.presentation.api.dto.response.chat_response import ChatResponse
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -184,3 +186,18 @@ async def health_check():
     return {"status": "healthy"}
 
 router.include_router(status_router)
+
+import traceback
+@router.post("/chat", response_model=ChatResponse)
+@inject
+async def chat(
+    request: ChatRequest,
+    service: LangGraphWorkflowService = Depends(Provide[Container.langgraph_workflow])
+):
+    """챗봇과의 대화 응답을 반환합니다."""
+    try:
+        ai_result = await service.chat(request.model_dump())
+        return ChatResponse(message=ai_result.get("message", ""))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"챗봇 응답 생성 실패: {str(e)}")
