@@ -187,6 +187,7 @@ async def health_check():
 
 router.include_router(status_router)
 
+import traceback
 @router.post("/chat", response_model=ChatResponse)
 @inject
 async def chat(
@@ -198,4 +199,5 @@ async def chat(
         ai_result = await service.chat(request.model_dump())
         return ChatResponse(message=ai_result.get("message", ""))
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"챗봇 응답 생성 실패: {str(e)}")
