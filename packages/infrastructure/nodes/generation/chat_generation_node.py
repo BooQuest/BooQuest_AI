@@ -34,8 +34,19 @@ class ChatGenerationNode(BaseGenerationNode[ChatState]):
             chain = prompt | self.llm
             result = chain.invoke(prompt_data)
 
-            # result는 일반 텍스트일 것으로 가정
-            payload = {"message": str(result)}
+            text = getattr(result, "content", None) or str(result)
+            meta = getattr(result, "response_metadata", {}) or {}
+            usage = (meta.get("token_usage") or {})  # {'prompt_tokens':..., 'completion_tokens':..., 'total_tokens':...}
+
+            payload = {
+                "message": text,    # 클라이언트가 쓸 본문
+                "usage": {          # 비용 모니터링용
+                    "prompt_tokens": usage.get("prompt_tokens"),
+                    "completion_tokens": usage.get("completion_tokens"),
+                    "total_tokens": usage.get("total_tokens"),
+                    "model": meta.get("model_name"),
+                }
+            }
             updated_state = self._update_generation_state(state, payload)
             return updated_state
         except Exception as e:
