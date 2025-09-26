@@ -16,6 +16,8 @@ from packages.presentation.api.dto.response.mission_step_response import Mission
 from packages.presentation.api.dto.request.regenerate_mission_steps_request import RegenerateMissionStepsRequest
 from packages.presentation.api.dto.request.chat_request import ChatRequest
 from packages.presentation.api.dto.response.chat_response import ChatResponse
+from packages.presentation.api.dto.request.title_request import TitleRequest
+from packages.presentation.api.dto.response.title_response import TitleResponse
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -201,3 +203,18 @@ async def chat(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"챗봇 응답 생성 실패: {str(e)}")
+
+
+@router.post("/title/summarize", response_model=TitleResponse)
+@inject
+async def summarize_title(
+    request: TitleRequest,
+    service: LangGraphWorkflowService = Depends(Provide[Container.langgraph_workflow])
+):
+    """챗봇 대화 제목을 생성합니다."""
+    try:
+        ai_result = await service.generate_title(request.model_dump())
+        return TitleResponse(title=ai_result.get("title", ""))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"제목 생성 실패: {str(e)}")
