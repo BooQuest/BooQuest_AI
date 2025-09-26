@@ -34,10 +34,16 @@ class ChatTitleGenerationNode(BaseGenerationNode[TitleState]):
             chain = prompt | self.llm
             result = chain.invoke(prompt_data)
 
-            # result에서 텍스트 추출
+            # result에서 텍스트 추출 및 정제
             text = getattr(result, "content", None) or str(result)
-            # 제목 정리 (불필요한 문장부호 제거)
-            title = text.strip().replace('"', '').replace("'", '')
+            title = text.strip()
+            # 특수문자 및 개행 제거
+            disallowed_chars = ['"', "'", "(`)", "()", "[]", "{}", "\n", "\r", "…"]
+            for ch in disallowed_chars:
+                title = title.replace(ch, "")
+            # 최대 15자 제한
+            if len(title) > 15:
+                title = title[:15]
 
             payload = {"title": title}
             updated_state = self._update_generation_state(state, payload)
