@@ -93,8 +93,13 @@ class LangGraphWorkflowService:
     def _build_side_job_workflow(self):
         """사이드잡 생성 워크플로우를 구축합니다."""
         from packages.infrastructure.nodes.states.langgraph_state import SideJobState
+        from packages.infrastructure.nodes.generation.trend_retrieval_node import TrendRetrievalNode
         
         sg = StateGraph(SideJobState)
+        
+        # 트렌드 검색 노드
+        trend_retrieval_node = TrendRetrievalNode()
+        sg.add_node(trend_retrieval_node.name, trend_retrieval_node)
         
         # AI 생성 노드
         generation_node = SideJobGenerationNode()
@@ -105,10 +110,11 @@ class LangGraphWorkflowService:
         sg.add_node(save_node.name, save_node.save_side_jobs)
         
         # 엣지 연결
+        sg.add_edge(trend_retrieval_node.name, generation_node.name)
         sg.add_edge(generation_node.name, save_node.name)
         sg.add_edge(save_node.name, END)
         
-        sg.set_entry_point(generation_node.name)
+        sg.set_entry_point(trend_retrieval_node.name)
         return sg.compile()
 
     def _build_regenerate_side_job_workflow(self):
