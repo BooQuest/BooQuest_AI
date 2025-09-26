@@ -19,6 +19,7 @@ class SideJobState(BaseState):
     """사이드잡 생성 상태."""
     profile_data: Dict[str, Any]  # 입력 데이터
     side_job_ids: Optional[List[int]] = None  # 사이드잡 전체 재생성에만 필요한 필드
+    trend_data: Optional[Dict[str, Any]] = None  # 트렌드 검색 결과
 
 
 class MissionState(BaseState):
@@ -42,6 +43,11 @@ class RegenerateMissionStepState(BaseState):
 class ChatState(BaseState):
     """채팅 상태 (부업 가이드 챗봇)."""
     request_data: Dict[str, Any]  # 입력 데이터 (message, history 등)
+
+
+class TitleState(BaseState):
+    """챗봇 대화 제목 생성 상태."""
+    request_data: Dict[str, Any]  # 입력 데이터 (message)
 
 # Union 타입으로 모든 상태를 표현
 LangGraphState = Union[SideJobState, MissionState, MissionStepState]

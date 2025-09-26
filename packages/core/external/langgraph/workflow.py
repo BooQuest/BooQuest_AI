@@ -17,6 +17,7 @@ from packages.infrastructure.nodes.save.save_side_job_node import SaveSideJobNod
 from packages.infrastructure.nodes.generation.mission_step_regeneration_node import MissionStepRegenerationNode
 from packages.infrastructure.nodes.generation.chat_generation_node import ChatGenerationNode
 from packages.infrastructure.nodes.generation.chat_classify_node import ChatClassifyNode
+from packages.infrastructure.nodes.generation.chat_title_generation_node import ChatTitleGenerationNode
 
 
 class LangGraphWorkflowService:
@@ -35,6 +36,7 @@ class LangGraphWorkflowService:
         self.regenerate_all_side_jobs_workflow = self._build_regenerate_all_side_job_workflow()
         self.regenerate_mission_steps_workflow = self._build_regenerate_mission_step_workflow()
         self.chat_workflow = self._build_chat_workflow()
+        self.title_workflow = self._build_title_workflow()
         
         self.logger.info("LangGraph 워크플로우 서비스 초기화 완료")
 
@@ -91,8 +93,13 @@ class LangGraphWorkflowService:
     def _build_side_job_workflow(self):
         """사이드잡 생성 워크플로우를 구축합니다."""
         from packages.infrastructure.nodes.states.langgraph_state import SideJobState
+        from packages.infrastructure.nodes.generation.trend_retrieval_node import TrendRetrievalNode
         
         sg = StateGraph(SideJobState)
+        
+        # 트렌드 검색 노드
+        trend_retrieval_node = TrendRetrievalNode()
+        sg.add_node(trend_retrieval_node.name, trend_retrieval_node)
         
         # AI 생성 노드
         generation_node = SideJobGenerationNode()
@@ -103,10 +110,11 @@ class LangGraphWorkflowService:
         sg.add_node(save_node.name, save_node.save_side_jobs)
         
         # 엣지 연결
+        sg.add_edge(trend_retrieval_node.name, generation_node.name)
         sg.add_edge(generation_node.name, save_node.name)
         sg.add_edge(save_node.name, END)
         
-        sg.set_entry_point(generation_node.name)
+        sg.set_entry_point(trend_retrieval_node.name)
         return sg.compile()
 
     def _build_regenerate_side_job_workflow(self):
@@ -221,6 +229,19 @@ class LangGraphWorkflowService:
 #         sg.add_edge("chat_request_related", END)
 
 #         sg.set_entry_point(classify_node.name)
+        sg.set_entry_point(generation_node.name)
+        return sg.compile()
+
+    def _build_title_workflow(self):
+        """챗봇 대화 제목 생성 워크플로우를 구축합니다."""
+        from packages.infrastructure.nodes.states.langgraph_state import TitleState
+        
+        sg = StateGraph(TitleState)
+        
+        generation_node = ChatTitleGenerationNode()
+        sg.add_node(generation_node.name, generation_node)
+        
+        sg.add_edge(generation_node.name, END)
         sg.set_entry_point(generation_node.name)
         return sg.compile()
 
@@ -343,4 +364,17 @@ class LangGraphWorkflowService:
             return result.get("ai_result", {})
         except Exception as e:
             self.logger.error(f"챗봇 응답 생성 실패: {e}")
+            raise
+
+    async def generate_title(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """챗봇 대화 제목을 생성합니다."""
+        try:
+            initial_state = self._create_initial_state(
+                request_data=request_data,
+                user_id=request_data.get("user_id"),
+            )
+            result = await self.title_workflow.ainvoke(initial_state)
+            return result.get("ai_result", {})
+        except Exception as e:
+            self.logger.error(f"챗봇 제목 생성 실패: {e}")
             raise

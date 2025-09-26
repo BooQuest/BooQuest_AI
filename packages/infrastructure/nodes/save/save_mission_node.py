@@ -1,6 +1,7 @@
 """미션 저장을 위한 LangGraph 노드."""
 
-from typing import Dict, Union
+import json
+from typing import Dict, Union, List
 from packages.infrastructure.nodes.base_node import BaseSaveNode
 from packages.infrastructure.nodes.states.langgraph_state import MissionState
 
@@ -20,15 +21,21 @@ class SaveMissionNode(BaseSaveNode[MissionState]):
             self.logger.error(f"미션 저장 실패: {e}")
             raise
     
-    def _prepare_data(self, entity: Dict[str, Union[int, str, bool]], state: MissionState) -> Dict[str, Union[int, str, bool]]:
+    def _prepare_data(self, entity: Dict[str, Union[int, str, bool, List]], state: MissionState) -> Dict[str, Union[int, str, bool]]:
         """저장할 데이터를 준비합니다."""
+        # guide 필드를 JSON 문자열로 변환
+        guide_data = entity.get("guide", [])
+        guide_json = ""
+        if isinstance(guide_data, list) and guide_data:
+            guide_json = json.dumps(guide_data, ensure_ascii=False)
+        
         return {
             "user_id": state["user_id"],
             "sidejob_id": state["sidejob_id"],
             "title": entity.get("title", ""),
             "order_no": entity.get("orderNo", 1),
             "design_notes": entity.get("notes", ""),
-            "guide": entity.get("guide", ""),
+            "guide": guide_json,
             "status": "PLANNED"
         }
     

@@ -61,19 +61,79 @@ class SideJobGenerationNode(BaseGenerationNode[SideJobState]):
     
     def _prepare_prompt_data(self, state: SideJobState) -> Dict[str, Union[str, List[str]]]:
         """프롬프트 데이터 준비."""
-        profile_data = self._safe_get(state, "profile_data", {})
+        # 상태 로깅
+        self.logger.info("SideJobGenerationNode 실행 시작")
+        
+        # 중첩된 profile_data 구조 처리
+        raw_profile_data = self._safe_get(state, "profile_data", {})
+        
+        # profile_data가 중첩되어 있는 경우 처리
+        if "profile_data" in raw_profile_data:
+            profile_data = raw_profile_data["profile_data"]
+        else:
+            profile_data = raw_profile_data
+            
+        trend_data = self._safe_get(state, "trend_data", {})
+        
+        # 디버깅 로그 추가
+        self.logger.info(f"원본 프로필 데이터: {raw_profile_data}")
+        self.logger.info(f"처리된 프로필 데이터: {profile_data}")
+        self.logger.info(f"트렌드 데이터: {trend_data}")
+        
         expression_style = profile_data.get("expression_style", "")
+        
+        # 표현 방식 매핑
+        style_mapping = {
+            "글": "TEXT",
+            "그림": "IMAGE", 
+            "영상": "VIDEO"
+        }
+        
+        mapped_style = style_mapping.get(expression_style, expression_style.upper())
+        
         # 플랫폼 데이터 로더에서 데이터 가져오기
-        expression_jobs = self.prompt_templates.platform_loader.get_expression_side_jobs(expression_style)
-        platform_list = expression_jobs.get(expression_style.upper(), [])  # ← 중요
+        expression_jobs = self.prompt_templates.platform_loader.get_expression_side_jobs(mapped_style)
+        platform_list = expression_jobs.get(mapped_style, [])
 
         platform_names = ", ".join(platform_list)
+        
+        # 트렌드 정보 추출
+        trend_summary = trend_data.get("trend_summary", "")
+        relevant_trends = trend_data.get("relevant_trends", [])
+        
+        # 트렌드 상세 정보 생성
+        trend_details = self._format_trend_details(relevant_trends)
+        
+        # 디버깅 로그 추가
+        self.logger.info(f"플랫폼 목록: {platform_list}")
+        self.logger.info(f"트렌드 요약: {trend_summary}")
+        self.logger.info(f"관련 트렌드 개수: {len(relevant_trends)}")
 
-        return {
+        prompt_data = {
             "job": profile_data.get("job", ""),
             "hobbies": ", ".join(profile_data.get("hobbies", [])),
             "expression_style": expression_style,
             "strength_type": profile_data.get("strength_type", ""),
-            "platform_names": platform_names
+            "platform_names": platform_names,
+            "trend_summary": trend_summary,
+            "trend_details": trend_details
         }
+        
+        self.logger.info(f"최종 프롬프트 데이터: {prompt_data}")
+        return prompt_data
+    
+    def _format_trend_details(self, trends: List[Dict[str, any]]) -> str:
+        """트렌드 상세 정보 포맷팅."""
+        if not trends:
+            return "현재 관련 트렌드 정보가 없습니다."
+        
+        trend_info = []
+        for trend in trends[:5]:  # 최대 5개 트렌드만 포함
+            platform = trend.get("platform", "")
+            title = trend.get("title", "")
+            content = trend.get("content", "")[:100] + "..." if len(trend.get("content", "")) > 100 else trend.get("content", "")
+            
+            trend_info.append(f"• {platform}: {title} - {content}")
+        
+        return "\n".join(trend_info)
     
