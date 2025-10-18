@@ -18,6 +18,7 @@ from packages.presentation.api.dto.request.chat_request import ChatRequest
 from packages.presentation.api.dto.response.chat_response import ChatResponse
 from packages.presentation.api.dto.request.title_request import TitleRequest
 from packages.presentation.api.dto.response.title_response import TitleResponse
+from packages.presentation.api.dto.request.custom_side_job_request import CustomSideJobRequest
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -218,3 +219,18 @@ async def summarize_title(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"제목 생성 실패: {str(e)}")
+    
+
+@router.post("/custom", response_model=bool)
+@inject
+async def validate_custom_side_job(
+    request: CustomSideJobRequest,
+    service: LangGraphWorkflowService = Depends(Provide[Container.langgraph_workflow])
+):
+    """사용자가 입력한 부업을 검증합니다."""
+    try:
+         # sns 부업과 관련있으면 True, 아니면 False 반환
+       return await service.validate_custom_side_job(request.side_job)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"검증 중 에러 발생: {str(e)}")
