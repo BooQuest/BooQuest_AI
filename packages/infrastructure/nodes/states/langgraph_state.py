@@ -49,5 +49,9 @@ class TitleState(BaseState):
     """챗봇 대화 제목 생성 상태."""
     request_data: Dict[str, Any]  # 입력 데이터 (message)
 
+class ValidateCustomSideJobState(BaseState):
+    """사용자 정의 사이드잡 검증 상태."""
+    request_data: str  # 입력 데이터 (custom_side_job)
+
 # Union 타입으로 모든 상태를 표현
 LangGraphState = Union[SideJobState, MissionState, MissionStepState]
