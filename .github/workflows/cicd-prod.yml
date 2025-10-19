@@ -53,6 +53,9 @@ jobs:
           key: ${{ secrets.SSH_KEY_PROD_API }}
           command_timeout: 20m
           script: |
+            echo "[on_api] host=$(hostname -f) ip=$(hostname -I) user=$(whoami)"
+            nc -zv -w 5 "${{ secrets.AI_PRIVATE_HOST_PROD }}" 22 || echo "[on_api] port22 closed"
+  
             set -euo pipefail
             
             echo "IMG=${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}"
