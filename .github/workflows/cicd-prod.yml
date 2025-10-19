@@ -54,8 +54,7 @@ jobs:
           script: |
             set -euo pipefail
             
-            sudo --preserve-env=AI_SSH_KEY_PATH \
-              AI_SSH_KEY_PATH="/home/booquest/key/booquest-prod-app-key.pem" \
+            sudo AI_SSH_KEY_PATH="/home/booquest/key/booquest-prod-app-key.pem" \
               /opt/booquest/deploy/ai/deploy_ai.sh \
               "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}" \
               "${{ secrets.AI_PRIVATE_HOST_PROD }}" \
