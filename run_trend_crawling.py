@@ -25,27 +25,27 @@ from packages.infrastructure.services.trend_storage_service import TrendStorageS
 async def run_trend_crawling():
     """트렌드 크롤링을 실행합니다."""
     try:
-        print("🚀 SNS 트렌드 크롤링 시작...")
+        print("[시작] SNS 트렌드 크롤링 시작...")
         
         # 크롤링 서비스 초기화
         crawling_service = TrendCrawlingService()
         
         # 모든 트렌드 크롤링
-        print("📡 RSS 피드에서 트렌드 데이터 수집 중...")
+        print("[진행] RSS 피드에서 트렌드 데이터 수집 중...")
         result = crawling_service.crawl_all_trends()
         
-        print(f"✅ 크롤링 완료: {result}")
+        print(f"[완료] 크롤링 완료: {result}")
         
         # 결과 확인
         if isinstance(result, dict) and result.get("rss", 0) > 0:
-            print(f"🎉 크롤링 및 저장 완료: {result['rss']}개 트렌드가 데이터베이스에 저장되었습니다!")
+            print(f"[결과] 크롤링 및 저장 완료: {result['rss']}개 트렌드가 데이터베이스에 저장되었습니다.")
             return result
         else:
-            print("⚠️ 크롤링된 트렌드가 없거나 저장에 실패했습니다.")
+            print("[경고] 크롤링된 트렌드가 없거나 저장에 실패했습니다.")
             return result
         
     except Exception as e:
-        print(f"❌ 트렌드 크롤링 실패: {e}")
+        print(f"[오류] 트렌드 크롤링 실패: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -60,11 +60,12 @@ def main():
     # 비동기 함수 실행
     result = asyncio.run(run_trend_crawling())
     
-    if result:
-        print("\n✅ 모든 작업이 성공적으로 완료되었습니다!")
-        print(f"총 {len(result)}개의 트렌드가 데이터베이스에 저장되었습니다.")
+    if result and isinstance(result, dict) and result.get("rss", 0) > 0:
+        print("\n[결과] 모든 작업이 성공적으로 완료되었습니다.")
+        print(f"총 {result.get('rss', 0)}개의 트렌드가 데이터베이스에 저장되었습니다.")
     else:
-        print("\n❌ 작업이 실패했습니다.")
+        print("\n[결과] 작업이 실패했습니다.")
+        print("크롤링 결과를 확인해주세요.")
     
     print("=" * 50)
 

@@ -1,6 +1,6 @@
 """AI 응답 모델 DTO - AI 질문에 대한 응답."""
 
-from typing import List
+from typing import List, Literal
 from pydantic import BaseModel, Field
 
 
@@ -44,3 +44,9 @@ class MissionStepAIResponse(BaseModel):
 class MissionStepsAIResponse(BaseModel):
     """AI가 생성하는 미션 단계 목록 응답 모델."""
     mission_steps: List[MissionStepAIResponse] = Field(..., description="미션 단계 목록")
+
+
+class TrendValidationResponse(BaseModel):
+    """트렌드 검증 응답 모델."""
+    validation_result: Literal["Y", "N"] = Field(..., description="부업 정보로 사용 가능 여부: Y(사용 가능) 또는 N(사용 불가)")
+    reason: str = Field(..., description="검증 결과 이유")
