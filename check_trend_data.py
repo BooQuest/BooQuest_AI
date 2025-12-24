@@ -6,10 +6,8 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 환경 변수 설정
-os.environ.setdefault('CLOVA_X_PROVIDER', 'naver')
-os.environ.setdefault('CLOVA_X_MODEL', 'HCX-007')
-os.environ.setdefault('CLOVA_X_API_KEY', 'dummy_key')
-os.environ.setdefault('CLOVA_X_BASE_URL', 'https://clovastudio.naver.com')
+os.environ.setdefault("GOOGLE_API_KEY", "dummy_key")
+os.environ.setdefault("GEMINI_MODEL", "gemini-3.0-flash")
 os.environ.setdefault('DB_USER', 'postgres')
 os.environ.setdefault('DB_PWD', 'Rlarldnd1!')
 os.environ.setdefault('DB_HOST', 'localhost')

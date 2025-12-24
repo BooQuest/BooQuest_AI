@@ -14,7 +14,9 @@ pip install -r requirements.txt
 
 ```bash
 # .env 파일 생성
-CLOVA_X_API_KEY=your_api_key_here
+GOOGLE_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-3.0-flash
+GOOGLE_API_VERSION=v1
 LOG_LEVEL=INFO
 ```
 
@@ -44,7 +46,7 @@ Content-Type: application/json
 ## 🛠️ 기술 스택
 
 - **Backend**: FastAPI, Python 3.12
-- **AI**: Clova X API
+- **AI**: Google Gemini (via `langchain_google_genai`)
 - **아키텍처**: 헥사고날 아키텍처
 
 ## 🔧 주요 기능

@@ -3,7 +3,7 @@
 from packages.infrastructure.config.config import get_settings
 from packages.infrastructure.nodes.base_node import BaseGenerationNode
 from packages.infrastructure.nodes.states.langgraph_state import ValidateCustomSideJobState
-from langchain_naver import ChatClovaX
+from packages.core.external.google_genai.client import create_gemini_llm
 
 
 class ValidateCustomSideJobNode(BaseGenerationNode[ValidateCustomSideJobState]):
@@ -13,14 +13,10 @@ class ValidateCustomSideJobNode(BaseGenerationNode[ValidateCustomSideJobState]):
         super().__init__("validate_custom_side_job")
         self.settings = get_settings()
 
-        # ClovaX 설정 (다른 노드들과 동일하게 맞춤)
-        self.llm = ChatClovaX(
-            api_key=self.settings.clova_x_api_key,
-            base_url=self.settings.clova_x_base_url,
-            model=self.settings.clova_x_model,
+        # Gemini 3 Flash 설정
+        self.llm = create_gemini_llm(
             temperature=0.3,
-            max_tokens=512,
-            thinking={"effort": "none"},
+            max_output_tokens=512,
         )
 
     def __call__(self, state: ValidateCustomSideJobState) -> ValidateCustomSideJobState:

@@ -5,7 +5,7 @@ from packages.infrastructure.config.config import get_settings
 from packages.infrastructure.nodes.base_node import BaseGenerationNode
 from packages.infrastructure.prompts.chat_title_prompts import ChatTitlePrompts
 from packages.infrastructure.nodes.states.langgraph_state import TitleState
-from langchain_naver import ChatClovaX
+from packages.core.external.google_genai.client import create_gemini_llm
 
 
 class ChatTitleGenerationNode(BaseGenerationNode[TitleState]):
@@ -15,13 +15,9 @@ class ChatTitleGenerationNode(BaseGenerationNode[TitleState]):
         super().__init__("chat_title_generate")
         self.settings = get_settings()
 
-        self.llm = ChatClovaX(
-            api_key=self.settings.clova_x_api_key,
-            base_url=self.settings.clova_x_base_url,
-            model=self.settings.clova_x_model,
+        self.llm = create_gemini_llm(
             temperature=0.3,
-            max_tokens=50,
-            thinking={"effort": "none"},
+            max_output_tokens=50,
         )
 
         self.prompt_templates = ChatTitlePrompts()

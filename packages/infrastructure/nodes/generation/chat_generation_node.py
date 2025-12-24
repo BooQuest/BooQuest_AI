@@ -5,7 +5,7 @@ from packages.infrastructure.config.config import get_settings
 from packages.infrastructure.nodes.base_node import BaseGenerationNode
 from packages.infrastructure.prompts.chat_prompts import ChatPrompts
 from packages.infrastructure.nodes.states.langgraph_state import ChatState
-from langchain_naver import ChatClovaX
+from packages.core.external.google_genai.client import create_gemini_llm
 
 
 class ChatGenerationNode(BaseGenerationNode[ChatState]):
@@ -15,13 +15,13 @@ class ChatGenerationNode(BaseGenerationNode[ChatState]):
         super().__init__("chat_generate")
         self.settings = get_settings()
 
-        self.llm = ChatClovaX(
-            api_key=self.settings.clova_x_api_key,
-            base_url=self.settings.clova_x_base_url,
-            model=self.settings.clova_x_model,
+        # Gemini 3 Flash 설정
+        # - 환경변수:
+        #   GOOGLE_API_KEY : Gemini API 키
+        #   GEMINI_MODEL   : 예) "gemini-3.0-flash" 또는 "gemini-2.0-flash"
+        self.llm = create_gemini_llm(
             temperature=0.5,
-            max_tokens=512,
-            thinking={"effort": "none"},
+            max_output_tokens=512,
         )
 
         self.prompt_templates = ChatPrompts()

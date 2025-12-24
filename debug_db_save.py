@@ -4,9 +4,7 @@
 import os
 
 # 환경변수 설정
-os.environ['CLOVA_X_PROVIDER'] = 'naver'
-os.environ['CLOVA_X_MODEL'] = 'HCX-007'
-os.environ['CLOVA_X_API_KEY'] = 'test'
+os.environ["GOOGLE_API_KEY"] = "test"
 
 def debug_db_save():
     """DB 저장 과정 디버깅"""
