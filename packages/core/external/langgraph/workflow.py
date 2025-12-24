@@ -37,6 +37,7 @@ class LangGraphWorkflowService:
         self.regenerate_mission_steps_workflow = self._build_regenerate_mission_step_workflow()
         self.chat_workflow = self._build_chat_workflow()
         self.title_workflow = self._build_title_workflow()
+        self.validate_custom_side_job_workflow = self._build_validate_custom_side_job_workflow()
         
         self.logger.info("LangGraph 워크플로우 서비스 초기화 완료")
 
@@ -244,6 +245,22 @@ class LangGraphWorkflowService:
         sg.add_edge(generation_node.name, END)
         sg.set_entry_point(generation_node.name)
         return sg.compile()
+    
+    def _build_validate_custom_side_job_workflow(self):
+        """사용자 입력 부업 검증 워크플로우를 구축합니다."""
+        from packages.infrastructure.nodes.states.langgraph_state import ValidateCustomSideJobState
+        from packages.infrastructure.nodes.generation.validate_custom_side_job_node import ValidateCustomSideJobNode
+
+        sg = StateGraph(ValidateCustomSideJobState)
+
+        # AI 검증 노드
+        validation_node = ValidateCustomSideJobNode()
+        sg.add_node(validation_node.name, validation_node)
+
+        # END로 연결 (검증만 수행하므로 저장 없음)
+        sg.add_edge(validation_node.name, END)
+        sg.set_entry_point(validation_node.name)
+        return sg.compile()
 
     async def generate_missions(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """미션을 생성합니다."""
@@ -377,4 +394,21 @@ class LangGraphWorkflowService:
             return result.get("ai_result", {})
         except Exception as e:
             self.logger.error(f"챗봇 제목 생성 실패: {e}")
+            raise
+
+    async def validate_custom_side_job(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """부업 검증 응답을 생성합니다."""
+        try:
+            initial_state = self._create_initial_state(
+                request_data=request_data
+            )
+            result = await self.validate_custom_side_job_workflow.ainvoke(initial_state)
+            if isinstance(result, dict):
+                return result.get("ai_result", {})
+            else:
+                # str이면 바로 ai_result로 반환
+                return {"ai_result": result}
+
+        except Exception as e:
+            self.logger.error(f"부업 검증 응답 생성 실패: {e}")
             raise

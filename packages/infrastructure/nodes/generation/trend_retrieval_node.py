@@ -4,6 +4,10 @@ from typing import Dict, Union, List
 from packages.infrastructure.nodes.base_node import BaseNode
 from packages.infrastructure.nodes.states.langgraph_state import SideJobState
 from packages.infrastructure.services.trend_retriever_service import TrendRetrieverService
+from packages.infrastructure.config.config import get_settings
+from packages.infrastructure.prompts.trend_validation_prompts import TrendValidationPrompts
+from packages.presentation.api.dto.response.ai_response_models import TrendValidationResponse
+from packages.core.external.google_genai.client import create_gemini_llm
 
 
 class TrendRetrievalNode(BaseNode[SideJobState]):
@@ -12,6 +16,21 @@ class TrendRetrievalNode(BaseNode[SideJobState]):
     def __init__(self):
         super().__init__("retrieve_trends")
         self.trend_retriever = TrendRetrieverService()
+        self.settings = get_settings()
+        
+        # 트렌드 검증용 LLM 설정
+        self.validation_llm = create_gemini_llm(
+            temperature=0.3,  # 검증은 낮은 temperature 사용
+            max_output_tokens=512,
+        )
+        
+        # Structured Output 설정
+        self.validation_llm = self.validation_llm.with_structured_output(
+            TrendValidationResponse, method="json_schema"
+        )
+        
+        # 검증 프롬프트 템플릿
+        self.validation_prompts = TrendValidationPrompts()
     
     def __call__(self, state: SideJobState) -> SideJobState:
         """노드 실행."""
@@ -105,9 +124,8 @@ class TrendRetrievalNode(BaseNode[SideJobState]):
         return queries[:5]  # 최대 5개 쿼리로 제한
     
     def _search_relevant_trends(self, search_queries: List[str]) -> List[Dict[str, any]]:
-        """검색 쿼리 기반 관련 트렌드 검색."""
+        """검색 쿼리 기반 관련 트렌드 검색 및 검증."""
         all_trends = []
-
         
         self.logger.info(f"검색 쿼리 목록: {search_queries}")
         
@@ -129,7 +147,12 @@ class TrendRetrievalNode(BaseNode[SideJobState]):
         
         self.logger.info(f"중복 제거 후 트렌드: {len(unique_trends)}개")
         
-        return unique_trends[:10]  # 최대 10개 트렌드 반환
+        # AI 검증을 통해 부업 정보로 활용 가능한 트렌드만 필터링
+        validated_trends = self._validate_trends(unique_trends)
+        
+        self.logger.info(f"검증 후 유효한 트렌드: {len(validated_trends)}개")
+        
+        return validated_trends[:10]  # 최대 10개 트렌드 반환
     
     def _create_trend_summary(self, trends: List[Dict[str, any]]) -> str:
         """트렌드 요약 정보 생성."""
@@ -166,3 +189,59 @@ class TrendRetrievalNode(BaseNode[SideJobState]):
         unique_trends.sort(key=lambda x: x.get("created_at", ""), reverse=True)
         
         return unique_trends
+    
+    def _validate_trends(self, trends: List[Dict[str, any]]) -> List[Dict[str, any]]:
+        """AI를 사용하여 트렌드가 부업 정보로 활용 가능한지 검증."""
+        validated_trends = []
+        
+        if not trends:
+            return validated_trends
+        
+        self.logger.info(f"트렌드 검증 시작: {len(trends)}개")
+        
+        for trend in trends:
+            try:
+                # 트렌드 검증 실행
+                is_valid = self._validate_single_trend(trend)
+                
+                if is_valid:
+                    validated_trends.append(trend)
+                    self.logger.debug(f"트렌드 검증 통과: {trend.get('title', 'N/A')[:50]}")
+                else:
+                    self.logger.debug(f"트렌드 검증 실패: {trend.get('title', 'N/A')[:50]}")
+                    
+            except Exception as e:
+                self.logger.warning(f"트렌드 검증 중 오류 발생 (트렌드 제외): {e}")
+                # 검증 실패 시 해당 트렌드는 제외 (안전한 선택)
+                continue
+        
+        return validated_trends
+    
+    def _validate_single_trend(self, trend: Dict[str, any]) -> bool:
+        """단일 트렌드 검증."""
+        try:
+            platform = trend.get("platform", "")
+            title = trend.get("title", "")
+            content = trend.get("content", "") or title  # content가 없으면 title 사용
+            
+            # 프롬프트 데이터 준비
+            prompt_data = {
+                "platform": platform,
+                "title": title,
+                "content": content[:500]  # 너무 긴 내용은 제한
+            }
+            
+            # 프롬프트 생성 및 실행
+            prompt_template = self.validation_prompts.create_validation_prompt_template()
+            chain = prompt_template | self.validation_llm
+            result = chain.invoke(prompt_data)
+            
+            # 검증 결과 반환 (Y면 True, N이면 False)
+            if hasattr(result, 'validation_result'):
+                return result.validation_result == "Y"
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"트렌드 검증 중 예외 발생: {e}")
+            # 검증 실패 시 안전하게 False 반환
+            return False

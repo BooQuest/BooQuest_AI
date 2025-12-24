@@ -6,7 +6,7 @@ from packages.infrastructure.nodes.base_node import BaseGenerationNode
 from packages.infrastructure.prompts.regenerate_side_job_prompts import RegenerateSideJobPrompts
 from packages.presentation.api.dto.response.ai_response_models import SideJobsAIResponse
 from packages.infrastructure.nodes.states.langgraph_state import SideJobState
-from langchain_naver import ChatClovaX
+from packages.core.external.google_genai.client import create_gemini_llm
 
 
 class RegenerateSideJobGenerationNode(BaseGenerationNode[SideJobState]):
@@ -16,16 +16,10 @@ class RegenerateSideJobGenerationNode(BaseGenerationNode[SideJobState]):
         super().__init__("regenerate_side_jobs")
         self.settings = get_settings()
         
-        # LLM 설정
-        self.llm = ChatClovaX(
-            api_key=self.settings.clova_x_api_key,
-            base_url=self.settings.clova_x_base_url,
-            model=self.settings.clova_x_model,
+        # LLM 설정 (Gemini 3 Flash)
+        self.llm = create_gemini_llm(
             temperature=0.7,
-            max_tokens=1024,  # Set max tokens larger than 1024 to use tool calling
-            thinking={
-                "effort": "none"  # Set to "none" to disable thinking, as structured outputs are incompatible with thinking
-            },
+            max_output_tokens=1024,  # Set max tokens larger than 1024 to use tool calling
         )
         
         # Structured Output 설정

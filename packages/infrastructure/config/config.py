@@ -5,12 +5,28 @@ from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings
 
+
+BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR.parents[2]
+DEFAULT_ENV_FILE_PATH = PROJECT_ROOT / "config" / ".env"
+FALLBACK_ENV_FILE_PATH = BASE_DIR / ".env"
+
+
+def _determine_env_file_path() -> Path:
+    """Select the env file path, falling back to the packaged sample when needed."""
+    for candidate in (DEFAULT_ENV_FILE_PATH, FALLBACK_ENV_FILE_PATH):
+        if candidate.exists():
+            return candidate
+    return DEFAULT_ENV_FILE_PATH
+
+
+ENV_FILE_PATH = _determine_env_file_path()
+
 class Settings(BaseSettings):
-    # Clova X 설정
-    clova_x_provider: str
-    clova_x_model: str 
-    clova_x_api_key: str
-    clova_x_base_url: str
+    # Gemini 설정
+    google_api_key: str  # GOOGLE_API_KEY
+    gemini_model: str    # GEMINI_MODEL
+    google_api_version: str = "v1"  # GOOGLE_API_VERSION
     
     # AI 모델 기본 설정값들 (어댑터에서 사용할 수 있도록)
     default_temperature: float
@@ -62,7 +78,7 @@ class Settings(BaseSettings):
 
     
     class Config:
-        env_file = "config/.env"
+        env_file = str(ENV_FILE_PATH)
         env_file_encoding = "utf-8"
         extra = "ignore"
     
@@ -74,7 +90,7 @@ class HotReloadSettings:
         self._settings: Optional[Settings] = None
         self._lock = threading.RLock()  # 재진입 가능한 락
         self._last_modified = 0
-        self._env_file_path = Path("config/.env")
+        self._env_file_path = ENV_FILE_PATH
         self._logger = logging.getLogger("HotReloadSettings")
         self._watcher_thread = None
         self._stop_watcher = threading.Event()

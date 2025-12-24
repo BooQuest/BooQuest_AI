@@ -5,8 +5,8 @@ from packages.infrastructure.config.config import get_settings
 from packages.infrastructure.nodes.base_node import BaseGenerationNode
 from packages.infrastructure.prompts.mission_step_regenerate_prompts import MissionStepRegeneratePrompts
 from packages.presentation.api.dto.response.ai_response_models import MissionStepsAIResponse
-from langchain_naver import ChatClovaX
 from packages.infrastructure.nodes.states.langgraph_state import RegenerateMissionStepState
+from packages.core.external.google_genai.client import create_gemini_llm
 
 class MissionStepRegenerationNode(BaseGenerationNode[RegenerateMissionStepState]):
     """미션 스텝 재생성을 위한 LangGraph 노드."""
@@ -15,16 +15,10 @@ class MissionStepRegenerationNode(BaseGenerationNode[RegenerateMissionStepState]
         super().__init__("generate_mission_steps")
         self.settings = get_settings()
         
-        # LLM 설정
-        self.llm = ChatClovaX(
-            api_key=self.settings.clova_x_api_key,
-            base_url=self.settings.clova_x_base_url,
-            model=self.settings.clova_x_model,
+        # LLM 설정 (Gemini 3 Flash)
+        self.llm = create_gemini_llm(
             temperature=0.7,
-            max_tokens=1024,  # Set max tokens larger than 1024 to use tool calling
-            thinking={
-                "effort": "none"  # Set to "none" to disable thinking, as structured outputs are incompatible with thinking
-            },
+            max_output_tokens=1024,  # Set max tokens larger than 1024 to use tool calling
         )
         
         self.llm = self.llm.with_structured_output(MissionStepsAIResponse, method="json_schema")
