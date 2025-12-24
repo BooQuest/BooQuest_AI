@@ -20,13 +20,13 @@ from sqlalchemy import text
 def check_trend_data():
     """데이터베이스의 트렌드 데이터를 확인합니다."""
     try:
-        print("🔍 데이터베이스 트렌드 데이터 확인 중...")
+        print("[데이터 확인] 데이터베이스 트렌드 데이터 확인 중...")
         
         engine = create_database_engine_from_config()
         
         with engine.connect() as conn:
             # sns_trends 테이블 데이터 확인
-            print("\n📊 sns_trends 테이블 데이터:")
+            print("\n[테이블 정보] sns_trends 테이블 데이터:")
             result = conn.execute(text("SELECT COUNT(*) FROM sns_trends;"))
             count = result.scalar()
             print(f"총 트렌드 개수: {count}")
@@ -41,12 +41,12 @@ def check_trend_data():
                 """))
                 
                 trends = result.fetchall()
-                print("\n📋 최근 트렌드 5개:")
+                print("\n[최근 데이터] 최근 트렌드 5개:")
                 for i, trend in enumerate(trends, 1):
                     print(f"  {i}. [{trend[1]}] {trend[2][:50]}... ({trend[3]})")
             
             # trend_embeddings 테이블 데이터 확인
-            print("\n📊 trend_embeddings 테이블 데이터:")
+            print("\n[테이블 정보] trend_embeddings 테이블 데이터:")
             result = conn.execute(text("SELECT COUNT(*) FROM trend_embeddings;"))
             embedding_count = result.scalar()
             print(f"총 임베딩 개수: {embedding_count}")
@@ -66,13 +66,13 @@ def check_trend_data():
                         vector_data = json.loads(embedding_sample)
                         dimension = len(vector_data)
                         print(f"임베딩 차원: {dimension}")
-                    except:
-                        print("임베딩 차원 확인 실패")
+                    except Exception as parse_error:
+                        print(f"임베딩 차원 확인 실패: {parse_error}")
             
             return count > 0
             
     except Exception as e:
-        print(f"❌ 데이터 확인 실패: {e}")
+        print(f"[오류] 데이터 확인 실패: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -80,7 +80,7 @@ def check_trend_data():
 def test_trend_retrieval():
     """트렌드 검색 기능을 테스트합니다."""
     try:
-        print("\n🔍 트렌드 검색 기능 테스트...")
+        print("\n[테스트] 트렌드 검색 기능 테스트 시작...")
         
         from packages.infrastructure.services.trend_retriever_service import TrendRetrieverService
         
@@ -99,7 +99,7 @@ def test_trend_retrieval():
         return len(trends) > 0
         
     except Exception as e:
-        print(f"❌ 트렌드 검색 테스트 실패: {e}")
+        print(f"[오류] 트렌드 검색 테스트 실패: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -117,11 +117,11 @@ if __name__ == "__main__":
         retrieval_works = test_trend_retrieval()
         
         if retrieval_works:
-            print("\n✅ 모든 테스트 통과!")
+            print("\n[결과] 모든 테스트 통과")
             print("트렌드 데이터가 정상적으로 저장되고 검색됩니다.")
         else:
-            print("\n❌ 트렌드 검색에 문제가 있습니다.")
+            print("\n[결과] 트렌드 검색에 문제가 있습니다.")
+            print("트렌드 검색 기능을 확인해주세요.")
     else:
-        print("\n❌ 데이터베이스에 트렌드 데이터가 없습니다.")
-
+        print("\n[결과] 데이터베이스에 트렌드 데이터가 없습니다.")
         print("먼저 트렌드 크롤링을 실행해주세요.")

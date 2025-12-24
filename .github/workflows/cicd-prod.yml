@@ -1,0 +1,66 @@
+name: CI/CD (prod)
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: cicd-prod-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: booquest-ai
+  DEPLOY_TAG: latest
+  DOCKERFILE: docker/api.Dockerfile
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to NCP registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD_PROD }}" | docker login "${{ secrets.REGISTRY_URL_PROD }}" \
+            -u "${{ secrets.REGISTRY_USERNAME_PROD }}" --password-stdin
+
+      - name: Build image
+        run: |
+          docker build -f "${{ env.DOCKERFILE }}" \
+            -t "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}" \
+            -t "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${GITHUB_SHA::7}" \
+            .
+
+      - name: Push images
+        run: |
+          docker push "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}"
+          docker push "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${GITHUB_SHA::7}"
+
+      - name: Logout
+        if: always()
+        run: docker logout "${{ secrets.REGISTRY_URL_PROD }}" || true
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via API server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST_PROD_API }}
+          username: ${{ secrets.SSH_USER_PROD_API }}
+          key: ${{ secrets.SSH_KEY_PROD_API }}
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+            
+            echo "IMG=${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}"
+            
+            REGISTRY_USERNAME_PROD="${{ secrets.REGISTRY_USERNAME_PROD }}" \
+            REGISTRY_PASSWORD_PROD="${{ secrets.REGISTRY_PASSWORD_PROD }}" \
+            AI_SSH_KEY_PATH="/home/booquest/key/booquest-prod-app-key.pem" \
+            /opt/booquest/deploy/ai/deploy_ai.sh \
+              "${{ secrets.REGISTRY_URL_PROD }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOY_TAG }}" \
+              "${{ secrets.AI_PRIVATE_HOST_PROD }}" \
+              "${{ secrets.AI_DEPLOY_USER_PROD }}"
