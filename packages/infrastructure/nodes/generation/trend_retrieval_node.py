@@ -7,7 +7,7 @@ from packages.infrastructure.services.trend_retriever_service import TrendRetrie
 from packages.infrastructure.config.config import get_settings
 from packages.infrastructure.prompts.trend_validation_prompts import TrendValidationPrompts
 from packages.presentation.api.dto.response.ai_response_models import TrendValidationResponse
-from langchain_naver import ChatClovaX
+from packages.core.external.google_genai.client import create_gemini_llm
 
 
 class TrendRetrievalNode(BaseNode[SideJobState]):
@@ -19,15 +19,9 @@ class TrendRetrievalNode(BaseNode[SideJobState]):
         self.settings = get_settings()
         
         # 트렌드 검증용 LLM 설정
-        self.validation_llm = ChatClovaX(
-            api_key=self.settings.clova_x_api_key,
-            base_url=self.settings.clova_x_base_url,
-            model=self.settings.clova_x_model,
+        self.validation_llm = create_gemini_llm(
             temperature=0.3,  # 검증은 낮은 temperature 사용
-            max_tokens=512,
-            thinking={
-                "effort": "none"
-            },
+            max_output_tokens=512,
         )
         
         # Structured Output 설정
